@@ -3,3 +3,5 @@ webapp/dist/
 .vercel/
 *.log
 .DS_Store
+
+.vercel
