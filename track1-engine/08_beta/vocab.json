@@ -1,0 +1,69 @@
+{
+  "dir": "track1-engine/08_beta",
+  "module": 8,
+  "hub_title": "Step Vocabulary Hub",
+  "hub_h1": "Redex · Contractum · Context · <span>Reduct</span>",
+  "hub_tagline": "Four words for the four pieces of one computation step, placed side by side and on one picture, with the mix-ups named and corrected.",
+  "concepts": [
+    {
+      "key": "redex", "title": "Concept: Redex", "h1": "Redex",
+      "tagline": "The sub-term about to be rewritten: a rule's left side, found somewhere inside a term.",
+      "sentence": "A <strong>redex</strong> is a sub-term matching a rule's left side: <code>(λx. M) N</code> for β, or <code>λx. M x</code> (x ∉ FV(M)) for η. It's the <em>before</em> of one step.",
+      "analogy_big": "The redex is the sealed envelope you're about to open.",
+      "analogy": "It's still in the pile, exactly as written. Nothing has happened to it yet.",
+      "see": "<pre><code><span class=\"o\">(λx. x x) ([(λy. y) z])\n  context    C[□] = (λx. x x) □\n  redex           = (λy. y) z\n  contractum      = z\n  reduct  C[…]    = (λx. x x) z</span></code></pre><p class=\"muted\">Real <code>npm run demo</code> output for one step.</p>",
+      "wrong": "\"The redex is the whole term being reduced.\"",
+      "right": "The redex is the one sub-term that gets rewritten. The whole term is <em>context + redex</em>. Here, the whole term is <code>(λx. x x) ((λy. y) z)</code> and the redex is only <code>(λy. y) z</code>.",
+      "connects": "A redex sits inside a <a href=\"concept_context.html\">context</a>. Contracting it gives the <a href=\"concept_contractum.html\">contractum</a>. Putting that back into the context gives the <a href=\"concept_reduct.html\">reduct</a>."
+    },
+    {
+      "key": "contractum", "title": "Concept: Contractum", "h1": "Contractum",
+      "tagline": "What a redex turns into: the rule's right side, e.g. M[x := N] for β.",
+      "sentence": "The <strong>contractum</strong> is the result of applying the rule to the redex <em>alone</em>: <code>(λx. M) N</code> ↦ <code>M[x := N]</code>. It replaces the redex and nothing else.",
+      "analogy_big": "The contractum is the envelope's contents with the letter already dropped in.",
+      "analogy": "It's local. It knows nothing about the rest of the pile.",
+      "see": "<pre><code><span class=\"o\">λz. [(λx. λz. x z) z]\n  context    C[□] = λz. □\n  redex           = (λx. λz. x z) z\n  contractum      = λz1. z z1   (renamed z→z1 to avoid capture)\n  reduct  C[…]    = λz. λz1. z z1</span></code></pre><p class=\"muted\">Real demo output. Module 5's capture avoidance happens right here, while building the contractum.</p>",
+      "wrong": "\"The contractum is the new term after the step.\"",
+      "right": "That's the <em>reduct</em>. The contractum only replaces the redex. For <code>(λx. x x) ((λy. y) z)</code> stepping inside, the contractum is <code>z</code> but the new term is <code>(λx. x x) z</code>.",
+      "connects": "Contracting a <a href=\"concept_redex.html\">redex</a> gives the contractum. Plugging it into the same <a href=\"concept_context.html\">context</a> gives the <a href=\"concept_reduct.html\">reduct</a>."
+    },
+    {
+      "key": "context", "title": "Concept: Context", "h1": "Context",
+      "tagline": "The whole term with a hole where the redex sits. It records where the step happens.",
+      "sentence": "A <strong>context</strong> <code>C[□]</code> is a term with exactly one hole. <code>C[R]</code> fills the hole with R. Every one-step reduction has the form <code>C[R] → C[R']</code>.",
+      "analogy_big": "The context is the pile of papers with one envelope-shaped gap.",
+      "analogy": "Lift the envelope out, open it, and put the result back in the same gap. The rest of the pile never changes.",
+      "see": "<pre><code><span class=\"o\">λx. [(λy. y) x] z\n  context    C[□] = λx. □ z\n  rules used      : ξ ∘ app-L ∘ β</span></code></pre><p>In the engine, a context is data with one constructor per congruence rule (<code>appL</code>, <code>appR</code>, <code>lam</code> for ξ), so its shape <em>is</em> the chain of inference rules the step uses.</p>",
+      "wrong": "\"Filling a context's hole is substitution, so it must avoid capture.\"",
+      "right": "Plugging is deliberately <em>not</em> capture-avoiding. Filling <code>λx. □</code> with <code>x</code> gives <code>λx. x</code>, because a redex under a λ must see that λ's variable. Substitution replaces free <em>variables</em>; plugging fills a <em>hole</em>.",
+      "connects": "The context surrounds the <a href=\"concept_redex.html\">redex</a>. Swapping the redex for its <a href=\"concept_contractum.html\">contractum</a> inside the same context produces the <a href=\"concept_reduct.html\">reduct</a>."
+    },
+    {
+      "key": "reduct", "title": "Concept: Reduct", "h1": "Reduct",
+      "tagline": "The whole term after the step: the context with the contractum plugged into its hole.",
+      "sentence": "If <code>M → N</code>, then N is a <strong>(one-step) reduct</strong> of M: <code>M = C[redex]</code> and <code>N = C[contractum]</code>. With <code>→*</code>, \"a reduct\" means anything reachable in zero or more steps.",
+      "analogy_big": "The reduct is the whole pile after you've opened one envelope.",
+      "analogy": "Only one spot changed. Everything else is exactly as it was.",
+      "see": "<pre><code><span class=\"o\">(λx. x x) ((λy. y) z)  →β  (λy. y) z ((λy. y) z)      (redex at ε)\n(λx. x x) ((λy. y) z)  →β  (λx. x x) z      (redex at arg)</span></code></pre><p class=\"muted\">Real demo output. A term has one one-step reduct per redex.</p>",
+      "wrong": "\"A term's reduct is its normal form.\"",
+      "right": "A reduct is just <em>somewhere further along</em>, and a term can have many. The normal form, if there is one, is the special reduct with no redexes left.",
+      "connects": "The reduct is the <a href=\"concept_context.html\">context</a> with the <a href=\"concept_contractum.html\">contractum</a> where the <a href=\"concept_redex.html\">redex</a> used to be."
+    }
+  ],
+  "picture_svg": "<svg viewBox=\"0 0 660 200\" width=\"660\" role=\"img\" aria-label=\"Context, redex, contractum, reduct\"><defs><marker id=\"ar\" viewBox=\"0 0 10 10\" refX=\"9\" refY=\"5\" markerWidth=\"7\" markerHeight=\"7\" orient=\"auto\"><path d=\"M0,0 L10,5 L0,10 z\" fill=\"#d4a017\"/></marker></defs><g font-family=\"JetBrains Mono, monospace\" font-size=\"18\"><text x=\"20\" y=\"50\" fill=\"#eeece6\" xml:space=\"preserve\">(λx. x x) (<tspan fill=\"#d4a017\">(λy. y) z</tspan>)</text><text x=\"20\" y=\"160\" fill=\"#eeece6\" xml:space=\"preserve\">(λx. x x) <tspan fill=\"#4ade80\">z</tspan></text><text x=\"420\" y=\"50\" fill=\"#eeece6\" xml:space=\"preserve\">(λx. x x) <tspan fill=\"#82aaff\">□</tspan></text></g><path d=\"M 180 62 L 180 138\" stroke=\"#d4a017\" stroke-width=\"2\" marker-end=\"url(#ar)\"/><g font-family=\"Inter, sans-serif\" font-size=\"13\"><text x=\"20\" y=\"22\" fill=\"#9a9992\">the whole term = C[redex]; the gold part is the redex</text><text x=\"190\" y=\"105\" fill=\"#9a9992\">contract (β)</text><text x=\"20\" y=\"188\" fill=\"#4ade80\">contractum z, plugged into the hole = the reduct</text><text x=\"420\" y=\"80\" fill=\"#82aaff\">the context C[□]:</text><text x=\"420\" y=\"98\" fill=\"#9a9992\">everything except the redex</text></g></svg>",
+  "picture_caption": "One step: <code>C[redex] → C[contractum]</code>, and the result is the reduct.",
+  "pairs": [
+    ["contractum vs reduct", "\"The contractum is the new term.\"", "The contractum replaces only the redex (<code>z</code>). The reduct is the whole new term (<code>(λx. x x) z</code>)."],
+    ["redex vs term", "\"This term is a redex, so it reduces.\"", "A term can <em>contain</em> redexes without being one: <code>f ((λx. x) y)</code>."],
+    ["context vs substitution", "\"Plugging a hole avoids capture, like substitution.\"", "Plugging must capture: <code>λx. □</code> filled with <code>x</code> is <code>λx. x</code>."],
+    ["reduct vs normal form", "\"The reduct is the answer.\"", "A reduct is one step on. The normal form is the reduct (if any) with no redexes left."]
+  ],
+  "quiz": [
+    ["In one step of <code>(λa. a a) b</code>, the part <code>(λa. a a) b</code>.", "Redex", "It matches (λx. M) N. Here the redex happens to be the whole term."],
+    ["For that step, the local result <code>b b</code>.", "Contractum", "The rule's right side. Since the context is just □, the reduct is also b b."],
+    ["For a step inside <code>λq. (λa. a) q</code>, the thing written <code>λq. □</code>.", "Context", "Everything except the redex, with a hole."],
+    ["For that same step, the whole result <code>λq. q</code>.", "Reduct", "The context with the contractum q plugged in."],
+    ["In <code>f ((λx. x) y) → f y</code>, the <code>y</code> that replaced <code>(λx. x) y</code>.", "Contractum", "Just the local replacement."],
+    ["In <code>f ((λx. x) y) → f y</code>, the whole <code>f y</code>.", "Reduct", "The new term."]
+  ]
+}

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reading the Course's TypeScript</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700;800&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../shared/course.css">
+</head>
+<body style="--accent:#d4a017;--accent-rgb:245,200,66">
+<nav class="topbar"><a class="brand" href="../index.html">λ <span>Alonzo</span></a><a href="../prerequisites.html">← All prerequisites</a><span class="spacer"></span><span class="muted">P8 of 8</span></nav>
+<header class="hero">
+  <div class="badge">PREREQUISITE P8</div>
+  <h1>Reading the Course's <span>TypeScript</span></h1>
+  <p class="tagline">The engine is written in a small, deliberate subset of TypeScript. This page covers every feature you'll see, and how to run it.</p>
+</header>
+<main class="container">
+
+<section id="why-ts">
+  <h2><span class="num">P8.1</span>Why TypeScript?</h2>
+  <p>One reason: <strong>the same file runs in two places</strong>. Node runs it from your terminal (tests, demos), and the
+  webapp imports it into the browser (the Labs). There is no port and no copy, so the Lab you play with is the code you read.
+  TypeScript's type checker also catches a large class of tree-handling mistakes before anything runs.</p>
+</section>
+
+<section id="tagged-unions">
+  <h2><span class="num">P8.2</span>Tagged unions: "one of these shapes"</h2>
+  <p>A value that can be one of several shapes is written as a <strong>union</strong> of object types, each carrying a
+  <code>kind</code> field that says which shape it is. This is how the course writes the λ-term tree.</p>
+  <p class="file-label">p8.ts</p>
+  <pre><code><span class="k">type</span> Shape =
+  | { kind: <span class="s">"circle"</span>; radius: number }
+  | { kind: <span class="s">"square"</span>; side: number };
+
+<span class="k">function</span> area(s: Shape): number {
+  <span class="k">switch</span> (s.kind) {
+    <span class="k">case</span> <span class="s">"circle"</span>: <span class="k">return</span> Math.PI * s.radius ** 2;
+    <span class="k">case</span> <span class="s">"square"</span>: <span class="k">return</span> s.side * s.side;
+  }
+}
+
+console.log(area({ kind: <span class="s">"square"</span>, side: 3 }));
+console.log(area({ kind: <span class="s">"circle"</span>, radius: 1 }).toFixed(4));
+<span class="k">const</span> twice = (f: (x: number) =&gt; number) =&gt; (x: number) =&gt; f(f(x));
+console.log(twice((x) =&gt; x + 1)(5));</code></pre>
+  <p>Inside <code>case "circle":</code>, TypeScript <em>knows</em> <code>s</code> has a <code>radius</code>. This is called <strong>narrowing</strong>.
+  If you forget a case, the checker complains that the function might not return a number. The engine's functions have exactly
+  this shape, with one <code>case</code> per node kind (<a href="p3_trees_and_recursion.html#recursion-on-trees">P3.3</a>).</p>
+</section>
+
+<section id="running">
+  <h2><span class="num">P8.3</span>Running a <code>.ts</code> file</h2>
+  <p>Node 22.6+ can run TypeScript directly by <em>stripping</em> the type annotations. It never type-checks. It just deletes them.
+  This course was verified on <strong>Node v22.14.0</strong>:</p>
+  <div class="run-box"><h4>Run it</h4>
+  <pre><code>node --experimental-strip-types --no-warnings p8.ts</code></pre>
+  <div class="desc">Actual output:</div>
+  <pre><code><span class="o">9
+3.1416
+7</span></code></pre></div>
+  <div class="callout gold"><div class="label">Getting an ExperimentalWarning?</div>
+  <p>Without <code>--no-warnings</code>, Node 22.14 prints <code>ExperimentalWarning: Type Stripping is an experimental feature and might change at any time</code>
+  to stderr before the output. It's harmless. On Node 23.6+ the flag isn't needed at all. On Node older than 22.6 you'll get
+  <code>bad option: --experimental-strip-types</code>, so upgrade Node.</p></div>
+  <p>Every module folder also has a <code>package.json</code>, so <code>npm test</code> and <code>npm run demo</code> run the same commands for you.</p>
+</section>
+
+<section id="erasable">
+  <h2><span class="num">P8.4</span>The rule the course follows: erasable syntax only</h2>
+  <p>Because Node <em>strips</em> types instead of compiling them, TypeScript features that generate JavaScript code are not
+  allowed: no <code>enum</code>, no <code>namespace</code>, no constructor parameter properties. Everything you see is plain JavaScript plus
+  annotations that can be deleted. If you delete every <code>: Type</code> in the file, it's still a working JS program.</p>
+</section>
+
+<section id="imports">
+  <h2><span class="num">P8.5</span>Imports use the <code>.ts</code> extension</h2>
+  <pre><code><span class="k">import</span> { Var, Lam, App } <span class="k">from</span> <span class="s">"./term.ts"</span>;</code></pre>
+  <p>Node requires the real file extension when stripping types. The webapp is configured
+  (<code>allowImportingTsExtensions</code>) to accept the same import.</p>
+</section>
+
+<section id="readonly">
+  <h2><span class="num">P8.6</span><code>readonly</code> and <code>as const</code></h2>
+  <p>Terms are never mutated (<a href="p3_trees_and_recursion.html#building-new-trees">P3.4</a>). The type definitions mark fields
+  <code>readonly</code>, so any accidental <code>t.body = …</code> is a type error.</p>
+</section>
+
+<section id="tests">
+  <h2><span class="num">P8.7</span>Tests: <code>node:test</code></h2>
+  <p>Each module's <code>test.ts</code> uses Node's built-in test runner: no libraries to install.</p>
+  <pre><code><span class="k">import</span> { test } <span class="k">from</span> <span class="s">"node:test"</span>;
+<span class="k">import</span> assert <span class="k">from</span> <span class="s">"node:assert/strict"</span>;
+test(<span class="s">"identity prints as λx.x"</span>, () =&gt; { assert.equal(print(I), <span class="s">"λx.x"</span>); });</code></pre>
+</section>
+<div class="module-nav"><a href="p7_inference_rules.html"><span class="dir">← Previous</span>P7 Inference-Rule Notation</a><a class="next" href="../track1-engine/01_term_ast/tutorial.html"><span class="dir">Start the course →</span>Module 1: Term AST &amp; Printer</a></div>
+</main>
+<footer>Alonzo · Prerequisite P8</footer>
+</body>
+</html>

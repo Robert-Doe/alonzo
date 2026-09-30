@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Parser</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700;800&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../shared/course.css">
+</head>
+<body style="--accent:#a78bfa;--accent-rgb:167,139,250">
+<nav class="topbar"><a class="brand" href="../../index.html">λ <span>Alonzo</span></a><a href="../../prerequisites.html">Prerequisites</a><a href="../../GLOSSARY.md">Glossary</a><a href="DECISIONS.md">Decisions</a><span class="spacer"></span><span class="muted">Track 1 · Phase 1 · Module 3 of 34</span></nav>
+
+<header class="hero">
+  <div class="badge">MODULE 03</div>
+  <h1>The <span>Parser</span></h1>
+  <p class="tagline">Tokens in, trees out. Three small functions, one per grammar rule, turn <code>(\x. x) y</code> into the tree from Module 1. Then we use them to finally <em>prove</em> the printer never lies.</p>
+  <div class="hero-grid">
+    <div class="hero-stat"><div class="num">3</div><div class="label">grammar rules</div></div>
+    <div class="hero-stat"><div class="num">5000/5000</div><div class="label">round trips</div></div>
+    <div class="hero-stat"><div class="num">3831/3831</div><div class="label">printed parens necessary</div></div>
+  </div>
+</header>
+
+<main class="container">
+
+<section id="s00">
+  <h2><span class="num">00</span>Prerequisites</h2>
+  <div class="prereq-bar">
+    <a class="tag" href="../../prerequisites/p4_grammars_and_bnf.html#ambiguity">P4.2 ambiguity</a>
+    <a class="tag" href="../../prerequisites/p4_grammars_and_bnf.html#assoc-precedence">P4.3 the two conventions</a>
+    <a class="tag" href="../../prerequisites/p3_trees_and_recursion.html#recursion-on-trees">P3.3 recursion</a>
+    <a class="tag" href="../../prerequisites/p3_trees_and_recursion.html#stack-depth">P3.5 stack depth</a>
+    <a class="tag" href="../../prerequisites/p1_functions_as_mappings.html#currying">P1.4 currying</a>
+  </div>
+  <p>From the course: <a href="../01_term_ast/tutorial.html#s04">Module 1's parenthesis table</a> and <a href="../02_lexer/tutorial.html">Module 2's tokens</a>.</p>
+</section>
+
+<section id="s01">
+  <h2><span class="num">01</span>The Big Analogy</h2>
+  <div class="analogy">
+    <div class="big">A recursive-descent parser is an office of clerks who can hire more clerks.</div>
+    <p>Tokens arrive on a conveyor belt. There are three kinds of clerk, one per grammar rule:</p>
+    <ul>
+      <li><strong>The Row Clerk</strong> (<code>term</code>) collects a row of items and clips them together left to right: <em>(a b) c</em>. They stop when the belt shows <code>)</code> or runs out.</li>
+      <li><strong>The Recipe Clerk</strong> (<code>λ</code>) takes the <code>λ</code>, writes down parameter names until the <code>.</code>, then <em>hires a brand-new Row Clerk</em> for the body and waits. That new Row Clerk has no idea where the recipe "should" end, so they keep collecting until <code>)</code> or the end. That's why a λ-body extends as far right as possible.</li>
+      <li><strong>The Atom Clerk</strong> takes a single name, or on seeing <code>(</code>, <em>hires a new Row Clerk</em> for the inside and then insists that the next item on the belt is <code>)</code>.</li>
+    </ul>
+    <p>Every clerk who hires another stops and waits for the finished sub-assembly. The pile of waiting clerks is the <strong>call stack</strong>.
+    When the last clerk returns, the first Row Clerk is holding the whole tree.</p>
+  </div>
+  <p>Now remember <a href="../01_term_ast/tutorial.html#s01">Module 1's phone call</a>: the printer adds "hold on, these go together" exactly
+  where a listener would otherwise guess wrong. The parser <em>is</em> that listener, with fixed guessing rules. This module checks that
+  the speaker and listener agree on thousands of phone calls.</p>
+</section>
+
+<section id="s02">
+  <h2><span class="num">02</span>What Happens, Step by Step</h2>
+  <ol class="steps">
+    <li><code>parse(src)</code> runs the lexer. If there are lexical errors, it returns them and stops.</li>
+    <li><code>parseTerm</code> checks that the next token can start an item (a name, <code>(</code> or <code>λ</code>). Otherwise: "expected a term."</li>
+    <li>It parses one item, then loops. While the next token can start another item, it parses it and sets <code>acc = App(acc, item)</code>. That's the left fold.</li>
+    <li>An item starting with <code>λ</code> goes to <code>parseLambda</code>: it collects one or more names, requires <code>.</code>, then calls <code>parseTerm</code> for the body, which eats the rest of the row.</li>
+    <li>An item starting with a name or <code>(</code> goes to <code>parseAtom</code>. A <code>(</code> triggers a nested <code>parseTerm</code> and then requires <code>)</code>.</li>
+    <li>Back at the top, the next token must be <code>eof</code>. Otherwise: "unexpected … after a complete term."</li>
+    <li>The first syntax error unwinds everything and returns <code>{ term: null, errors: [thatError] }</code>.</li>
+  </ol>
+</section>
+
+<section id="s03">
+  <h2><span class="num">03</span>The Map: Watching the Clerks Work</h2>
+  <p>Here's <code>parse("(λx. x) y", { trace: true })</code>. Each line is one rule entered, indented by how many clerks are waiting (real demo output):</p>
+<pre><code><span class="o">term  @1:1  next: '('
+  atom  @1:1  next: '('
+    term  @1:2  next: 'λ'
+      lambda  @1:2  next: 'λ'
+        term  @1:6  next: name 'x'
+          atom  @1:6  next: name 'x'
+  atom  @1:9  next: name 'y'</span></code></pre>
+  <div class="diagram">
+    <svg viewBox="0 0 640 230" width="640" role="img" aria-label="Call stack at the deepest point">
+      <g font-family="JetBrains Mono, monospace" font-size="14">
+        <text x="20" y="22" fill="#9a9992" font-family="Inter, sans-serif" font-size="13">Call stack at the deepest moment (reading the inner x):</text>
+        <g>
+          <rect x="20" y="190" width="260" height="30" rx="5" fill="#18181b" stroke="#a78bfa"/><text x="32" y="210" fill="#a78bfa">term</text><text x="120" y="210" fill="#9a9992" font-size="12">waiting for its first item</text>
+          <rect x="40" y="155" width="260" height="30" rx="5" fill="#18181b" stroke="#a78bfa"/><text x="52" y="175" fill="#a78bfa">atom</text><text x="140" y="175" fill="#9a9992" font-size="12">saw '(' — owes a ')'</text>
+          <rect x="60" y="120" width="260" height="30" rx="5" fill="#18181b" stroke="#a78bfa"/><text x="72" y="140" fill="#a78bfa">term</text><text x="160" y="140" fill="#9a9992" font-size="12">inside the parens</text>
+          <rect x="80" y="85" width="260" height="30" rx="5" fill="#18181b" stroke="#d4a017"/><text x="92" y="105" fill="#d4a017">lambda</text><text x="180" y="105" fill="#9a9992" font-size="12">params [x], waiting for body</text>
+          <rect x="100" y="50" width="260" height="30" rx="5" fill="#18181b" stroke="#a78bfa"/><text x="112" y="70" fill="#a78bfa">term</text><text x="200" y="70" fill="#9a9992" font-size="12">the body: stops at ')'</text>
+        </g>
+        <text x="400" y="80" fill="#eeece6">( λ x . x ) y</text>
+        <text x="400" y="100" fill="#f472b6">          ^</text>
+        <text x="400" y="140" fill="#9a9992" font-family="Inter, sans-serif" font-size="13">When the body's term sees ')',</text>
+        <text x="400" y="158" fill="#9a9992" font-family="Inter, sans-serif" font-size="13">it can't start an item, so it returns.</text>
+        <text x="400" y="176" fill="#9a9992" font-family="Inter, sans-serif" font-size="13">Everyone unwinds, and the outer term</text>
+        <text x="400" y="194" fill="#9a9992" font-family="Inter, sans-serif" font-size="13">continues with y: App((λx. x), y).</text>
+      </g>
+    </svg>
+    <div class="caption">Five clerks waiting on each other. The trace's indentation is exactly this stack.</div>
+  </div>
+  <a class="lab-link" data-lab="03" data-term="(λx. x) y">Watch the trace in the Lab</a><span class="lab-note"></span>
+</section>
+
+<section id="s04">
+  <h2><span class="num">04</span>The Code, Explained</h2>
+  <h3>The row: a loop, not left recursion</h3>
+  <p class="file-label">src/parser.ts</p>
+<pre><code><span class="k">function</span> parseTerm(): Term {
+  <span class="k">return</span> rule(<span class="s">"term"</span>, () =&gt; {
+    <span class="k">if</span> (!startsItem(peek().kind)) fail(`expected a term, found ${describe(peek())}`);
+    <span class="k">let</span> acc = parseItem();
+    <span class="c">// A λ item consumes the rest of the row, so after one, startsItem is false and we stop.</span>
+    <span class="k">while</span> (startsItem(peek().kind)) acc = App(acc, parseItem());
+    <span class="k">return</span> acc;
+  });
+}</code></pre>
+  <p>The textbook rule "<code>term ::= term item</code>" is <em>left-recursive</em>. Written as a function, it would call itself before reading
+  any token, forever. The loop builds the same left-leaning tree, <code>App(App(a, b), c)</code>, iteratively. This is convention 1.</p>
+
+  <h3>The λ: hire a Row Clerk for the body</h3>
+<pre><code><span class="k">function</span> parseLambda(): Term {
+  <span class="k">return</span> rule(<span class="s">"lambda"</span>, () =&gt; {
+    next(); <span class="c">// λ</span>
+    <span class="k">const</span> params: string[] = [];
+    <span class="k">if</span> (peek().kind !== <span class="s">"ident"</span>) fail(`expected a parameter name after 'λ', found ${describe(peek())}`);
+    <span class="k">while</span> (peek().kind === <span class="s">"ident"</span>) params.push(next().text);
+    expect(<span class="s">"dot"</span>, `after the parameter${params.length &gt; 1 ? <span class="s">"s"</span> : <span class="s">""</span>} of 'λ${params.join(<span class="s">" "</span>)}'`);
+    <span class="k">const</span> body = parseTerm();                                  <span class="c">// ← convention 2 lives here</span>
+    <span class="k">return</span> params.reduceRight&lt;Term&gt;((b, p) =&gt; Lam(p, b), body);   <span class="c">// λx y. M → λx. λy. M</span>
+  });
+}</code></pre>
+  <p>The body is a whole <code>term</code>, not an atom, so it runs until something stops a row: <code>)</code> or the end. That single
+  call <em>is</em> the "λ extends as far right as possible" convention.</p>
+
+  <h3>The atom: parentheses reset everything</h3>
+<pre><code><span class="k">if</span> (t.kind === <span class="s">"lparen"</span>) {
+  next();
+  <span class="k">const</span> inner = parseTerm();
+  <span class="k">if</span> (peek().kind !== <span class="s">"rparen"</span>) fail(`expected ')' to close the '(' at ${at(t.start)}, found ${describe(peek())}`);
+  next();
+  <span class="k">return</span> inner;
+}</code></pre>
+  <p>Parentheses produce no node. They just start a fresh <code>parseTerm</code>. That's why <code>((λx.(x)))</code> parses to exactly <code>I</code>.</p>
+
+  <h3>Testing the printer with the parser</h3>
+  <p class="file-label">src/parens.ts (core)</p>
+<pre><code><span class="k">const</span> without = src.slice(0, open) + <span class="s">" "</span> + src.slice(open + 1, close) + <span class="s">" "</span> + src.slice(close + 1);
+<span class="k">const</span> r = parse(without);
+<span class="k">const</span> same = r.term !== <span class="k">null</span> &amp;&amp; equalSyntax(r.term, original);</code></pre>
+  <p>To judge a pair of parentheses, delete it and re-parse. (A space goes where each paren was, so <code>(f)(x)</code> can't fuse into the single name
+  <code>fx</code>.) If the tree is unchanged, the pair was decoration.</p>
+  <div class="bullets"><div class="label">BULLET POINTS</div><ul>
+    <li>The grammar functions mirror the grammar rules. Read one and you've read the other.</li>
+    <li>Convention 1 is the <code>while</code> loop's left fold. Convention 2 is "the λ-body is a full term."</li>
+    <li>One token of lookahead is enough. The parser never backtracks.</li>
+    <li>The first syntax error ends parsing, with a message naming what was expected and what was found.</li>
+  </ul></div>
+</section>
+
+<section id="s05">
+  <h2><span class="num">05</span>Limits: What You Cannot Do Yet</h2>
+  <div class="compare">
+    <div class="cant"><h4>Can't do yet</h4><ul>
+      <li>Know which variables are bound or free. <code>λx. y</code> parses fine, and nobody checks <code>y</code> (Module 4).</li>
+      <li>See that <code>λx. x</code> and <code>λy. y</code> are the same function (Module 4).</li>
+      <li>Name definitions (<code>id = λx. x</code>). That's Module 12.</li>
+      <li>Recover after a syntax error to report a second one.</li>
+      <li>Parse extremely deep nesting. Each <code>(</code> uses host stack frames (<a href="../../prerequisites/p3_trees_and_recursion.html#stack-depth">P3.5</a>).</li>
+    </ul></div>
+    <div class="can"><h4>Can do now</h4><ul>
+      <li>Type terms as text: <code>(\x y. x) a b</code>.</li>
+      <li>Get precise, located syntax errors.</li>
+      <li>Watch the recursive descent via <code>{ trace: true }</code>.</li>
+      <li>Trust the printer: 5000 round trips, and every printed paren is necessary.</li>
+      <li>Ask which parentheses in any text are redundant.</li>
+    </ul></div>
+  </div>
+</section>
+
+<section id="s06">
+  <h2><span class="num">06</span>Run It</h2>
+  <div class="run-box"><h4>Run the tests</h4>
+  <pre><code>cd alonzo/track1-engine/03_parser
+npm test</code></pre>
+  <div class="desc">14 new tests + 27 carried from Modules 1–2. Actual summary:</div>
+<pre><code><span class="o"># tests 41
+# pass 41
+# fail 0</span></code></pre>
+  <div class="desc">Then:</div>
+  <pre><code>npm run demo</code></pre>
+  <div class="desc">Actual output (the trace section is shown in 03 above):</div>
+<pre><code><span class="o">== Text → tree ==
+f x y                → ((f x) y)
+λx. x y              → (λx. (x y))
+(λx. x) y            → ((λx. x) y)
+f λx. x g            → (f (λx. (x g)))
+λx y z. x z (y z)    → (λx. (λy. (λz. ((x z) (y z)))))
+…
+== Syntax errors ==
+1:7: expected ')' to close the '(' at 1:1, found end of input
+  (λx. x
+        ^
+1:2: expected a parameter name after 'λ', found '.'
+  λ. x
+   ^
+1:5: expected '.' after the parameters of 'λx x', found end of input
+  λx x
+      ^
+1:3: unexpected ')' after a complete term
+  f )
+    ^
+
+== Which parentheses matter? ==
+((λx. x) (y z)) (λw. w)
+  pair at  0..14 redundant  removing it gives the same tree
+  pair at  1..7  NECESSARY  removing it changes the tree to (λx. x (y z)) λw. w
+  pair at  9..13 NECESSARY  removing it changes the tree to (λx. x) y z λw. w
+  pair at 16..22 redundant  removing it gives the same tree
+print() of the same tree: (λx. x) (y z) λw. w
+
+== Closing Module 1's open question ==
+parse(print(t)) = t for 5000/5000 random terms
+paren pairs emitted by print(): 3831, necessary: 3831</span></code></pre></div>
+  <div class="callout red"><div class="label">Getting a blank or broken result?</div>
+  <ul>
+    <li><strong>"expected '.' after the parameters of 'λx x'"</strong> when you meant the identity: you forgot the dot. After <code>λ</code>, every name is a parameter until the <code>.</code>. Write <code>λx. x</code>.</li>
+    <li><strong>An unexpected tree for <code>f λx. x g</code>:</strong> it really is <code>f (λx. x g)</code>, because the λ swallows <code>g</code>. Write <code>f (λx. x) g</code>.</li>
+    <li><strong><code>RangeError: Maximum call stack size exceeded</code></strong> on absurdly nested input: that's the host stack limit (P3.5). Measured on Node 22.14, 1,000 nested <code>(…)</code> parse fine and 5,000 overflow. Each level costs several frames (term → atom → term…). Terms in this course never come close.</li>
+  </ul></div>
+  <a class="lab-link" data-lab="03">Open Lab 03: Parser Playground</a><span class="lab-note"></span>
+</section>
+
+<section id="s07">
+  <h2><span class="num">07</span>Brain Exercise</h2>
+  <div class="brain"><div class="label">Think before you reveal</div>
+  <p>Take this text:</p>
+  <pre><code>(f (λx. x)) ((λy. y) z)</code></pre>
+  <p><strong>(1) For each of the four parenthesis pairs, is it necessary or redundant on its own?
+  (2) If two pairs are each redundant on their own, can you always delete both?</strong> Decide using only the two conventions and
+  <a href="../01_term_ast/tutorial.html#s04">Module 1's three-row table</a>. Then check your guesses in the Lab's paren explorer and use
+  "remove ticked pairs together."</p>
+  <a class="lab-link" data-lab="03" data-term="(f (λx. x)) ((λy. y) z)">Check it in the Lab</a>
+  <details><summary>Reveal the answer</summary>
+  <ol>
+    <li><code>(f (λx. x))</code>: <strong>redundant</strong>. It's an application in function position, and convention 1 groups <code>f … …</code> that way anyway.</li>
+    <li><code>(λx. x)</code>: <strong>redundant</strong> in <em>this</em> text. Inside pair #1 it's the last thing before <code>)</code>, so nothing follows it to swallow.</li>
+    <li><code>((λy. y) z)</code>: <strong>necessary</strong>. It's an application in argument position. Without it, <code>f … (λy. y) z</code> passes <code>z</code> to <code>f</code>.</li>
+    <li><code>(λy. y)</code>: <strong>necessary</strong>. It's a λ in function position. Without it, the body swallows <code>z</code>.</li>
+  </ol>
+  <p>(2) <strong>No.</strong> Delete #1 and #2 together and you get <code>f λx. x ((λy. y) z)</code>: the λ is no longer protected by #1's closing
+  <code>)</code>, and it swallows the rest. Pair #2 was redundant only <em>because</em> #1 was there. Whether a parenthesis is necessary depends on
+  its context, including the other parentheses. That's the same lesson as Module 1's <code>trailing</code> flag, seen from the listener's
+  side. The Lab and <code>node</code> both confirm it: <code>print()</code> writes this tree as <code>f (λx. x) ((λy. y) z)</code>, keeping exactly one of the two.</p></details></div>
+</section>
+
+<section id="s08">
+  <h2><span class="num">08</span>There Are No Dumb Questions</h2>
+  <div class="qa">
+    <p class="q">Why not write the grammar rule <code>term ::= term item</code> directly as a function?</p>
+    <p class="a">Because <code>parseTerm</code> would immediately call <code>parseTerm</code>, which calls <code>parseTerm</code>… without consuming a token, until the stack overflows. Recursive descent can't handle <em>left recursion</em>. The standard fix is to rewrite it as repetition (<code>item+</code>) and fold the results left.</p>
+    <p class="q">The lexer reports all its errors. Why does the parser stop at the first?</p>
+    <p class="a">Because after a structural error the parser genuinely doesn't know what you meant. Was the missing <code>)</code> meant after <code>x</code> or after <code>y</code>? Every later "error" might be a phantom caused by its guess. Compilers for big languages resynchronize at statement boundaries like <code>;</code>. A single λ-term has none, so one precise error is more useful than several unreliable ones.</p>
+    <p class="q">Does 5000/5000 round trips <em>prove</em> the printer is unambiguous?</p>
+    <p class="a">It's strong evidence, not a proof. The proof is a structural induction (<a href="../../prerequisites/p5_structural_induction.html">P5</a>) over the three cases of <code>print</code>, showing each emitted string parses back to the same node given the <code>trailing</code> context. The random tests would catch any case where that argument has a hole. They're how we'd find a bug in the proof.</p>
+    <p class="q">Why does <code>(λx. x) y</code> need parentheses but <code>f (λx. x)</code> doesn't strictly need them?</p>
+    <p class="a">In the first, the λ is in function position. Something (<code>y</code>) follows it, and the λ-body would swallow it. In the second, the λ is last, so there's nothing to swallow. Our printer writes <code>f λx. x</code>, and the parser accepts that because it allows a λ as the last item of a row.</p>
+    <p class="q">Why doesn't the tree record where the parentheses were?</p>
+    <p class="a">Because they don't mean anything once the structure is known. That's the "abstract" in abstract syntax tree. If you wanted to reformat code while preserving a user's parentheses, you'd need a <em>concrete</em> syntax tree instead, as code formatters use.</p>
+  </div>
+</section>
+
+<section id="s09">
+  <h2><span class="num">09</span>What's Next</h2>
+  <p>You can now type terms. But the engine still treats names as plain strings: it thinks <code>λx. x</code> and <code>λy. y</code> differ, and it
+  can't tell that in <code>λx. y</code> the <code>y</code> comes from outside. <strong>Module 4</strong> computes <strong>free variables</strong> and
+  decides <strong>α-equivalence</strong>, the "bound names don't matter" rule from <a href="../../prerequisites/p2_variables_binding_scope.html#names-dont-matter">P2.5</a>.
+  It's the first module about <em>meaning</em> rather than syntax, and everything in Phase 2 depends on getting it right.</p>
+</section>
+
+<div class="module-nav">
+  <a href="../02_lexer/tutorial.html"><span class="dir">← Previous</span>Module 2: Lexer</a>
+  <a class="next" href="../04_alpha/tutorial.html"><span class="dir">Next →</span>Module 4: Free Variables &amp; α-Equivalence</a>
+</div>
+</main>
+<footer>Alonzo · Track 1 · Module 3 · <a href="DECISIONS.md">DECISIONS.md</a> · <a href="../../GLOSSARY.md">Glossary</a></footer>
+<script src="../../shared/course.js"></script>
+</body>
+</html>

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alonzo Course</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700;800&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared/course.css">
+</head>
+<body style="--accent:#d4a017;--accent-rgb:245,200,66">
+<nav class="topbar"><a class="brand" href="index.html">λ <span>Alonzo</span></a><a href="prerequisites.html">Prerequisites</a><a href="ROADMAP.md">Roadmap</a><a href="GLOSSARY.md">Glossary</a><a href="lessons/README.md">Lessons</a><span class="spacer"></span><a class="lab-link" data-lab="01" style="margin:0">Open the Lab</a></nav>
+<header class="hero">
+  <div class="badge">A CODE-FIRST COURSE</div>
+  <h1>Lambda Calculus <span>from Scratch</span></h1>
+  <p class="tagline">Build a working λ-calculus engine one small, verifiable module at a time. You start from three kinds of tree node and end with type inference, dependent types, a proof assistant, and a compiler to C and WebAssembly.</p>
+  <div class="hero-grid">
+    <div class="hero-stat"><div class="num">34</div><div class="label">engine modules</div></div>
+    <div class="hero-stat"><div class="num">14</div><div class="label">compiler modules</div></div>
+    <div class="hero-stat"><div class="num">8</div><div class="label">history modules</div></div>
+  </div>
+</header>
+<main class="container">
+<p class="lab-note"></p>
+
+<section>
+  <h2>How to take this course</h2>
+  <ol class="steps">
+    <li>Skim the <a href="prerequisites.html">prerequisites</a>. Every tutorial links back to exactly the sections it needs.</li>
+    <li>For each module, read <code>tutorial.html</code>, run <code>npm test</code> and <code>npm run demo</code> in its folder, then play with its Lab.</li>
+    <li>Read <code>DECISIONS.md</code> when you want to know <em>why</em> a line is the way it is.</li>
+  </ol>
+</section>
+
+<section>
+  <h2>Track 1: The Engine</h2>
+  <h3>Phase 1: Bare Terms (Syntax &amp; Binding)</h3>
+  <div class="card-grid" id="phase1">
+    <a class="card" href="track1-engine/01_term_ast/tutorial.html"><div class="n">Module 1</div><div class="t">Term AST &amp; Printer</div><div class="d">Three kinds of node, and the parenthesis rules that make text unambiguous.</div></a>
+    <a class="card" href="track1-engine/02_lexer/tutorial.html"><div class="n">Module 2</div><div class="t">Lexer</div><div class="d">Characters to tokens: maximal munch, positions, located errors.</div></a>
+    <a class="card" href="track1-engine/03_parser/tutorial.html"><div class="n">Module 3</div><div class="t">Parser</div><div class="d">Recursive descent, the two conventions, and proof the printer never lies.</div></a>
+    <a class="card" href="track1-engine/04_alpha/tutorial.html"><div class="n">Module 4</div><div class="t">Free Variables &amp; α-Equivalence</div><div class="d">Who binds whom, why bound names don't matter, and variable capture.</div></a>
+    <a class="card" href="track1-engine/05_substitution/tutorial.html"><div class="n">Module 5</div><div class="t">Capture-Avoiding Substitution</div><div class="d">M[x := N] done right, plus a vocabulary web for binder, scope, free, bound and capture.</div></a>
+    <a class="card" href="track1-engine/06_de_bruijn/tutorial.html"><div class="n">Module 6</div><div class="t">de Bruijn Indices</div><div class="d">Delete the names: α-equivalence becomes equality, and capture becomes a missed shift.</div></a>
+  </div>
+  <h3>Phase 2: Computation (Redexes &amp; Reduction)</h3>
+  <div class="card-grid" id="phase2">
+    <a class="card" href="track1-engine/07_redexes/tutorial.html"><div class="n">Module 7</div><div class="t">Redex Anatomy</div><div class="d">Every β- and η-redex by path; leftmost-outermost, innermost and head.</div></a>
+    <a class="card" href="track1-engine/08_beta/tutorial.html"><div class="n">Module 8</div><div class="t">β-Contraction &amp; One-Step Reduction</div><div class="d">Decompose, contract, plug: contexts as data, plus a redex/contractum/reduct vocabulary web.</div></a>
+    <a class="card" href="track1-engine/09_strategies/tutorial.html"><div class="n">Module 9</div><div class="t">Reduction Strategies &amp; Traces</div><div class="d">Normal, applicative, CBN, CBV, head: fuel, traces, and who finishes (λx. y) Ω.</div></a>
+    <a class="card" href="track1-engine/10_confluence/tutorial.html"><div class="n">Module 10</div><div class="t">Reduction Graphs, Residuals &amp; Church–Rosser</div><div class="d">Every path at once: forks rejoin, residuals are tracked, and M* closes the triangle.</div></a>
+    <a class="card" href="track1-engine/11_eta_normal_forms/tutorial.html"><div class="n">Module 11</div><div class="t">η-Conversion &amp; Normal-Form Zoo</div><div class="d">Five kinds of finished (βη, β, head, weak head, value), plus a vocabulary web.</div></a>
+  </div><!--/phase2-->
+  <h3>Phase 3: Programming in Pure λ (Encodings)</h3>
+  <div class="card-grid" id="phase3">
+    <a class="card" href="track1-engine/12_repl_prelude/tutorial.html"><div class="n">Module 12</div><div class="t">Definitions, Prelude &amp; REPL</div><div class="d">Names as macros (they add no power), a prelude, and a REPL in the terminal and the browser.</div></a>
+    <a class="card" href="track1-engine/13_booleans_pairs/tutorial.html"><div class="n">Module 13</div><div class="t">Church Booleans &amp; Pairs</div><div class="d">Data as behaviour: booleans are choices, pairs wait for a selector, and if must be lazy.</div></a>
+  </div><!--/phase3-->
+  <h2 style="margin-top:48px">Lesson clusters</h2>
+  <div class="card-grid">
+    <a class="card" href="lessons/01_associativity_and_currying/01_explainer.html"><div class="n">Lesson 01</div><div class="t">Associativity &amp; Currying</div><div class="d">Why f a b = (f a) b, why λ-bodies extend right, and why A → B → C groups the other way.</div></a>
+  </div>
+  <p class="muted">More modules appear here as they are built. See the <a href="ROADMAP.md">roadmap</a> for the full plan.</p>
+</section>
+</main>
+<footer>Alonzo: Lambda Calculus from Scratch</footer>
+<script src="shared/course.js"></script>
+</body>
+</html>

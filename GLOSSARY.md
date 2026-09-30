@@ -1,0 +1,237 @@
+# Alonzo Glossary
+
+Every term, file, function and constant the course introduces, in alphabetical order. Each entry is tagged
+with the module where it first appears. This file only ever grows: new entries are inserted in order, and
+existing entries are never rewritten.
+
+---
+
+- **`@`**: the label for an application node in drawn trees (`renderTree`). *First seen: Module 1.*
+- **Abstraction** (`λx. M`): a term that makes a function. It binds the name `x` (the *parameter*) inside the *body* `M`. AST kind `"lam"`. *First seen: Module 1.*
+- **α-conversion**: renaming a binder and every use it binds, `λx. M → λy. M{x↦y}`. It is allowed only when no capture results. *First seen: Module 4.*
+- **α-equivalence (`≡α`)**: two terms are α-equivalent if they differ only in the names of bound variables, e.g. `λx. x ≡α λy. y`. Free names must match. *First seen: Module 4.*
+- **`alphaEquivalent(a, b)`**: decides α-equivalence by comparing binder distance for bound variables and names for free ones. *First seen: Module 4.*
+- **`alphaKey(t, ctx)`**: an α-invariant string for a term (its de Bruijn printout), used to merge α-equivalent graph nodes. *First seen: Module 10.*
+- **`alpha.ts`**: the module file with `freeVars`, `occurrences`, `alphaEquivalent`, `renameBinder` and `canonicalize`. *First seen: Module 4.*
+- **`analyzeParens(src)`**: for each matched `( )` pair, deletes just that pair, re-parses, and reports whether the tree changed (necessary) or not (redundant). *First seen: Module 3.*
+- **Application** (`M N`): a term that applies the function `M` to the argument `N`. It is written by juxtaposition, not `f(x)`. AST kind `"app"`, fields `fn` and `arg`. *First seen: Module 1.*
+- **Applicative order**: the strategy that always contracts the leftmost-innermost redex, arguments first, even under λ. *First seen: Module 9.*
+- **`apps(head, ...args)`**: builds left-nested applications: `apps(f, a, b)` = `(f a) b`. *First seen: Module 1.*
+- **AST (Abstract Syntax Tree)**: the tree form of a program, without the parentheses and spacing that exist only for human readers. *First seen: Module 1.*
+- **Automath**: N. G. de Bruijn's late-1960s system for machine-checked mathematics, where de Bruijn indices were introduced (1972). Rebuilt in Track H8. *First seen: Module 6.*
+- **B, C, W (combinators)**: `B = λf g x. f (g x)` (compose), `C = λf x y. f y x` (flip), `W = λf x. f x x` (duplicate). Curry's names. *First seen: Module 12.*
+- **βη-normal form**: a term with neither β- nor η-redexes anywhere. *First seen: Module 11.*
+- **β-normal form**: a term containing no β-redex. Nothing is left to compute. *First seen: Module 7.*
+- **β-redex**: a sub-term `(λx. M) N`, an application whose function part is an abstraction. *First seen: Module 7.*
+- **β-rule**: `(λx. M) N → M[x := N]`, the computation rule of the λ-calculus. *First seen: Module 8.*
+- **Binder**: the `λx.` part of an abstraction, which introduces a name. It is a declaration, not a variable occurrence. See `concept_binder.html`. *First seen: Module 5.*
+- **Binder distance**: how many λs you pass, going outward from a variable use, before reaching its binder. It is the same number as the de Bruijn index (Module 6). *First seen: Module 4.*
+- **`binderNames(t)`**: the set of names used as binders anywhere in a term. *First seen: Module 4.*
+- **Binding site**: the λ that a variable use refers to, reported as a path by `occurrences`. *First seen: Module 4.*
+- **Bound variable (occurrence)**: a variable use inside the scope of a λ with the same name. *First seen: Module 4.*
+- **Call-by-name (CBN)**: the strategy that contracts only the weak-head redex. It never reduces under λ or inside arguments, and stops at weak head normal form. *First seen: Module 9.*
+- **Call-by-value (CBV)**: Plotkin's strategy. It evaluates the function part, then the argument, to values, then contracts `(λx. M) V`, and never goes under λ. *First seen: Module 9.*
+- **Call stack**: the chain of functions waiting on the one currently running. In recursive descent, it mirrors the nesting of the text being parsed. *First seen: Module 3.*
+- **`canonicalize(t)`**: renames every binder, in pre-order, to `v0, v1, …` (skipping free names). α-equivalent terms get identical canonical forms. *First seen: Module 4.*
+- **Capture-avoiding substitution**: substitution that renames an obstructing binder to a fresh name before moving a term under it (Curry's definition). *First seen: Module 5.*
+- **Capture (variable capture)**: when renaming or substitution makes a variable refer to a different binder than before, e.g. renaming K's `x` to `y` gives `λy. λy. y`. *First seen: Module 4.*
+- **Church booleans**: `true = λt f. t`, `false = λt f. f`. A boolean is a choice between two arguments. `true` is the same term as K, `false` as KI. *First seen: Module 13.*
+- **Church pair**: `pair = λa b s. s a b`, a function waiting for a selector. `fst = λp. p true`, `snd = λp. p false`. *First seen: Module 13.*
+- **Church–Rosser theorem** (confluence): if M →* N1 and M →* N2, some P has N1 →* P and N2 →* P. Proved by Church and Rosser in 1936. *First seen: Module 10.*
+- **`church.ts`**: the module file with `encodeBool`, `decodeBool`, `decodePair`, `truthTable` and `formatTruthTable`. *First seen: Module 13.*
+- **`classifyForms(t)`**: reports whether `t` is βη-normal, β-normal, HNF, WHNF, a value, and neutral. *First seen: Module 11.*
+- **`classifyRedexes(t, kinds)`**: every redex with flags for leftmost-outermost, leftmost-innermost, head and weak-head, plus how many λs enclose it. *First seen: Module 7.*
+- **Closed term** (combinator): a term with no free variables. *First seen: Module 4.*
+- **Code point**: one Unicode character, such as `λ` (U+03BB) or `😀` (U+1F600). JavaScript strings store some code points as two UTF-16 units, so the lexer counts columns in code points and offsets in UTF-16 units. *First seen: Module 2.*
+- **Compatible closure**: the extension of a rule so it may apply anywhere inside a term, given by the congruence rules app-L, app-R and ξ. *First seen: Module 8.*
+- **Complete development (M\*)**: contracting every redex originally present in M at once, inside-out (Takahashi). Redexes created along the way survive. *First seen: Module 10.*
+- **`concept_how_they_connect.html`**: the Module 5 vocabulary hub for binder, scope, free, bound and capture. *First seen: Module 5.*
+- **Concrete syntax tree**: a tree that also records punctuation such as parentheses, used by code formatters. Contrast with AST. *First seen: Module 3.*
+- **`confluenceReport(g)`**: for a finite graph, counts forks and rejoined forks, lists normal forms, and counts nodes cut off from them. *First seen: Module 10.*
+- **Congruence rules (app-L, app-R, ξ)**: "a step in the function part / argument / body of a λ is a step of the whole". *First seen: Module 8.*
+- **Context (`C[□]`)**: a term with exactly one hole. Every one-step reduction is `C[R] → C[R']`. In code, `Ctx`. *First seen: Module 8.*
+- **`contract(r)`**: applies the β- or η-rule at the root of the redex `r`. *First seen: Module 8.*
+- **Contractum**: what a redex becomes under the rule (e.g. `M[x := N]`). It is the local replacement, not the whole new term. *First seen: Module 8.*
+- **`counts(t)`**: returns `{ vars, lams, apps }`, the number of nodes of each kind. *First seen: Module 1.*
+- **Created redex**: a redex that exists only because of a step, e.g. `(λf. f P) (λw. w) → (λw. w) P`. It is not a residual. *First seen: Module 10.*
+- **de Bruijn index**: a bound variable written as the number of λs between it and its binder, e.g. `λx. λy. x` = `λ. λ. 1`. *First seen: Module 6.*
+- **de Bruijn level**: the mirror scheme, which counts binders from the root inward. It is used for values in Module 23. *First seen: Module 6.*
+- **`debruijn.ts`**: the module file with `DTerm`, `toDeBruijn`, `fromDeBruijn`, `printDB`, `parseDB`, `shift`, `substDB` and `substTop`. *First seen: Module 6.*
+- **`decodeBool(t)`**: normalizes `t` and returns `true`/`false` if its normal form is α-equal to a Church boolean, else `null`. *First seen: Module 13.*
+- **`decodePair(t)`**: asks a pair for its components by applying it to `true` and `false`. *First seen: Module 13.*
+- **`decompose(t, path)`**: splits `t` into a context and the sub-term at `path`, with `plug(ctx, focus) = t`. *First seen: Module 8.*
+- **`defaultContext(t)`**: the default naming context Γ, which is the term's free variables sorted alphabetically. *First seen: Module 6.*
+- **`define(defs, name, term)`**: adds a definition. It refuses self-reference and warns on redefinition. *First seen: Module 12.*
+- **Definition (macro)**: `name = term`, stored fully expanded and substituted for the name before evaluation. It adds no computational power. *First seen: Module 12.*
+- **`defs.ts`**: the module file with definitions, `expand`, `substMany` and program reading. *First seen: Module 12.*
+- **`depth(t)`**: the number of nodes on the longest root-to-leaf path. A lone variable has depth 1. *First seen: Module 1.*
+- **`develop(t)`**: computes the complete development `t*`. *First seen: Module 10.*
+- **Discarding**: a function ignoring its argument, so evaluating that argument first is wasted, or never finishes. *First seen: Module 9.*
+- **`DTerm`**: a nameless term: `var` (an index), `lam` (a body plus a display-only `hint`), `app`. *First seen: Module 6.*
+- **Duplication**: an outer β-step copying an unevaluated argument into several places, so its work may be done more than once. *First seen: Module 8.*
+- **EOF token**: the `eof` token that always ends a token list. It is a *sentinel*, so the parser never reads past the end. *First seen: Module 2.*
+- **`equalDB(a, b)`**: structural equality of nameless terms, ignoring hints. It is α-equivalence for terms converted with the same Γ. *First seen: Module 6.*
+- **`equalSyntax(a, b)`**: strict tree equality, where every name must match, binders included. `λx.x` and `λy.y` are *not* syntactically equal. Compare with α-equivalence (Module 4). *First seen: Module 1.*
+- **Error recovery (lexical)**: after a bad character, record a `LexError`, skip the character and keep lexing, so one run reports every error. *First seen: Module 2.*
+- **η-expansion**: `M ↦ λx. M x` with `x` fresh. It is meaning-preserving for functions in the pure calculus. `etaExpand` in code. *First seen: Module 11.*
+- **η-redex**: a sub-term `λx. M x` with `x ∉ FV(M)`, a λ that only forwards its argument. *First seen: Module 7.*
+- **η-rule**: `λx. M x → M` when `x ∉ FV(M)`. *First seen: Module 8.*
+- **`examples.ts`**: the module file that defines the classic named terms I, K, S, ω, Ω and the parenthesization test cases. *First seen: Module 1.*
+- **`execLine(session, line)`**: the pure REPL step: `(session, line) → (session, output lines)`. *First seen: Module 12.*
+- **`expand(t, defs)`**: replaces every free occurrence of a defined name by its body, all at once. *First seen: Module 12.*
+- **Extensionality**: two functions are equal if they agree on every argument. η builds this into the calculus. *First seen: Module 11.*
+- **`findRedexes(t, kinds)`**: all β- (and optionally η-) redexes, in pre-order (reading order, outer before inner). *First seen: Module 7.*
+- **Fork**: a node of a reduction graph with two different one-step reducts. *First seen: Module 10.*
+- **`formatError(src, err)`**: renders an error as `line:col: message`, followed by the source line and carets under the span. *First seen: Module 2.*
+- **`formatToken(t)`**: renders a token as `line:col kind "text"`, one per line in the demo. *First seen: Module 2.*
+- **`formatTrace(r)`**: prints each step's term with the chosen redex in `[…]`, then the result. *First seen: Module 9.*
+- **Free variable**: a variable use with no enclosing binder of the same name. It refers to something outside the term. *First seen: Module 4.*
+- **`freeVars(t)`**: the set FV(t), computed by the three equations FV(x) = {x}, FV(λx.M) = FV(M) − {x}, FV(M N) = FV(M) ∪ FV(N). *First seen: Module 4.*
+- **Fresh name**: a name that is not free in any of the terms involved, used to rename a binder safely. *First seen: Module 5.*
+- **`freshName(base, avoid)`**: returns `base` if unused, otherwise `base1`, `base2`, … (trailing digits replaced) until the result is not in `avoid`. *First seen: Module 5.*
+- **`fromDeBruijn(d, Γ)`**: converts back to a named term, freshening hint names so no binder captures. *First seen: Module 6.*
+- **Fuel**: the maximum number of steps a run may take. Running out is a reported result (`out-of-fuel`), not an error. *First seen: Module 9.*
+- **FV law**: `FV(M[x:=N]) = (FV(M) − {x}) ∪ (FV(N) if x ∈ FV(M))`, a property of correct substitution. It does not detect every capture. *First seen: Module 5.*
+- **`gen.ts`**: the module file with the seeded random-term generator used by property tests. *First seen: Module 1.*
+- **`graph.ts`**: the module file with the reduction graph, the confluence report, residuals and `develop`. *First seen: Module 10.*
+- **Head normal form (HNF)**: a term with no head redex, i.e. of the form `λx⃗. y M1 … Mk` with a variable `y` at the head. It may still contain redexes in its arguments. *First seen: Module 7.*
+- **Head redex**: in `λx⃗. (λy. M) N1 … Nk`, the redex `(λy. M) N1`. It exists only if the head of the function spine is a λ. *First seen: Module 7.*
+- **`headRedex(t)` / `weakHeadRedex(t)`**: return the head (or weak-head) redex, or `null`. *First seen: Module 7.*
+- **Head reduction**: the strategy that contracts only the head redex, stopping at head normal form. *First seen: Module 9.*
+- **Hint (binder)**: the original name kept on a nameless λ purely for display. *First seen: Module 6.*
+- **Hygiene (macros)**: the macro-system name for avoiding variable capture during expansion. *First seen: Module 5.*
+- **Identifier**: a name token matching `[A-Za-z_][A-Za-z0-9_']*`, the same rule as `isIdent`. *First seen: Module 2.*
+- **`if` (Church)**: `λb t e. b t e`. It is redundant, since a boolean already chooses. It must be lazy: strict strategies evaluate both branches. *First seen: Module 13.*
+- **I (identity combinator)**: `λx. x`. It returns its argument. *First seen: Module 1.*
+- **Implication (Church)**: `λp q. p q true`, "if p then q else true". *First seen: Module 13.*
+- **Inherited attribute**: a value passed from parent to child during a tree walk, such as the printer's `trailing` flag. *First seen: Module 1.*
+- **`isBetaNormal(t)`**: true when `t` has no β-redex. *First seen: Module 7.*
+- **`isClosed(t)`**: true when `freeVars(t)` is empty. *First seen: Module 4.*
+- **`isHNF(t)` / `isWHNF(t)`**: true when `t` has no head (resp. weak-head) redex. *First seen: Module 11.*
+- **`isIdent(name)`**: checks that a name matches `[A-Za-z_][A-Za-z0-9_']*`, the legal variable names. *First seen: Module 1.*
+- **`isValue(t)`**: true for λ-abstractions and variables, the values of call-by-value on open terms. *First seen: Module 9.*
+- **K\***: `λx. λy. y`, which returns its second argument. It is what a capturing rename turns K into. *First seen: Module 4.*
+- **K (constant combinator)**: `λx. λy. x`. It returns its first argument and ignores the second. *First seen: Module 1.*
+- **KI**: `λx y. y`, which keeps the second argument (the same as K\*). *First seen: Module 12.*
+- **`lams(params, body)`**: builds right-nested abstractions: `lams(["x","y"], M)` = `λx. λy. M`. *First seen: Module 1.*
+- **Leftmost-innermost redex**: among redexes containing no other redex, the first in reading order. It is applicative order's choice. *First seen: Module 7.*
+- **Leftmost-outermost redex**: the first redex in pre-order (reading order, outer first). It is normal order's choice. *First seen: Module 7.*
+- **Left recursion**: a grammar rule that starts with itself (`term ::= term item`). Recursive descent can't use it directly, so it is rewritten as repetition plus a left fold. *First seen: Module 3.*
+- **Lexer** (scanner, tokenizer): the pass that turns characters into tokens and skips whitespace and comments. *First seen: Module 2.*
+- **`LexError`**: `{ message, start, end }`, a located lexical error. Errors are values, not exceptions. *First seen: Module 2.*
+- **`lexer.ts`**: the module file containing `tokenize`, `formatError` and `formatToken`. *First seen: Module 2.*
+- **`LexResult`**: `{ tokens, errors }`, the return value of `tokenize`. *First seen: Module 2.*
+- **Line comment (`--`)**: text from `--` to the end of the line, which the lexer ignores. *First seen: Module 2.*
+- **LL(1)**: a grammar that can be parsed left-to-right choosing each rule from one token of lookahead, with no backtracking. The λ grammar is LL(1). *First seen: Module 3.*
+- **Locally nameless**: a representation with de Bruijn indices for bound variables and names for free ones, used by several proof-assistant kernels. It is the alternative to Γ. *First seen: Module 6.*
+- **Lookahead**: peeking at upcoming tokens without consuming them. The parser uses one token (`peek()`). *First seen: Module 3.*
+- **`markAt(t, path)`**: prints `t` with the sub-term at `path` wrapped in `[…]`. *First seen: Module 7.*
+- **Maximal munch** (longest match): the lexer rule that an identifier is the *longest* possible run of name characters, so `xy` is one name, not two. *First seen: Module 2.*
+- **Minimal parenthesization**: printing with parentheses only where the two conventions (left-associative application; λ-body extends right) would otherwise misread the tree. *First seen: Module 1.*
+- **M (mockingbird)**: `λx. x x`, self-application (the same as ω). Smullyan's name. *First seen: Module 12.*
+- **`mulberry32(seed)`**: a tiny seeded pseudo-random generator, used so random tests are replayable. *First seen: Module 1.*
+- **Multi-binder shorthand**: `λx y z. M`, which parses to `λx. λy. λz. M`. *First seen: Module 3.*
+- **Nameless term**: a term using de Bruijn indices instead of bound names. *First seen: Module 6.*
+- **Naming context (Γ)**: an ordered list of free-variable names. Under d binders, the free variable Γ[i] has index d + i. *First seen: Module 6.*
+- **Neutral term**: a variable applied to zero or more arguments, `y M1 … Mk`. It is stuck at the head forever. *First seen: Module 11.*
+- **Normal order**: the strategy that always contracts the leftmost-outermost redex. It is complete: it finds a normal form whenever one exists. *First seen: Module 9.*
+- **`normalOrderBetaEta`**: the strategy that picks the leftmost-outermost redex of either kind (β or η). *First seen: Module 11.*
+- **`normal.ts`**: the module file with the normal-form predicates, `etaExpand`, `normalOrderBetaEta` and the four normalizers. *First seen: Module 11.*
+- **`occurrences(t)`**: lists every variable use with its path and the path of its binder (or `null` if free). *First seen: Module 4.*
+- **ω (little omega)**: `λx. x x`. It applies its argument to itself. *First seen: Module 1.*
+- **Ω (big Omega)**: `ω ω` = `(λx. x x) λx. x x`, the classic term whose reduction never finishes (Module 9). *First seen: Module 1.*
+- **Omega (prelude name)**: `M M`, the ASCII name for Ω in `prelude.lam`. *First seen: Module 12.*
+- **One-step reduction (`→β`)**: the relation "M becomes N by contracting exactly one β-redex somewhere in M". *First seen: Module 8.*
+- **`oneStepReducts(t)`**: every term reachable from `t` in one step, one per redex. *First seen: Module 8.*
+- **Panic-mode recovery**: the error-recovery technique of skipping to a synchronizing token (e.g. `;`) and continuing. It is not used here, because a λ-term has no such tokens. *First seen: Module 3.*
+- **Parallel reduction (⇒)**: contracting any set of existing redexes simultaneously. It is the tool of the Tait–Martin-Löf confluence proof. *First seen: Module 10.*
+- **`parens.ts`**: the module file containing `analyzeParens`. *First seen: Module 3.*
+- **`parseDB(src)`**: reads nameless text such as `λ. λ. 1 (λ. 0 2)`, accepting `\`, optional hint names and redundant parentheses. *First seen: Module 6.*
+- **`ParseError`**: `{ message, start, end }`, a located syntax error. *First seen: Module 3.*
+- **`parseOrThrow(src)`**: a convenience for known-good input. It returns the `Term` or throws a located `Error`. *First seen: Module 3.*
+- **Parser**: the pass that turns tokens into a tree according to a grammar. *First seen: Module 3.*
+- **`parser.ts`**: the module file containing `parse` and `parseOrThrow`. *First seen: Module 3.*
+- **`parse(src, opts)`**: the parser entry point, returning `{ term, errors, trace }`. It never throws on bad input. *First seen: Module 3.*
+- **Path**: the route from the root to a node, as a list of steps `fn`, `arg`, `body`. The root is `ε`. *First seen: Module 4.*
+- **`plug(ctx, t)`**: fills a context's hole with `t`. Deliberately NOT capture-avoiding. *First seen: Module 8.*
+- **`Pos`**: `{ offset, line, col }`, a source position. Line and column are 1-based, and offset is a UTF-16 index. *First seen: Module 2.*
+- **Prelude (`prelude.lam`)**: the file of standard definitions loaded when the REPL starts. *First seen: Module 12.*
+- **Pre-order**: a traversal that visits a node before its children (function part before argument). For terms, it is reading order. *First seen: Module 7.*
+- **`printCtx(ctx)`**: prints a context with `□` for the hole. *First seen: Module 8.*
+- **`printDB(d, opts)`**: prints a nameless term with Module 1's parenthesization rules. `{ hints: true }` shows hint names. *First seen: Module 6.*
+- **`print(t, opts)`**: prints a term in textbook notation with minimal parentheses. `{ lambda: "\\" }` gives ASCII output. *First seen: Module 1.*
+- **`printFull(t)`**: prints a term with parentheses around every compound node. It is unambiguous but noisy. *First seen: Module 1.*
+- **`printWithSpans(t)`**: prints exactly like `print(t)`, and also records each sub-term's `[start, end)` character span. *First seen: Module 7.*
+- **`randomTerm(rand, opts)`**: generates a random term from a seeded generator, a maximum depth and a pool of names. *First seen: Module 1.*
+- **Reachability**: the set of nodes reachable from a node by following edges (including itself). *First seen: Module 10.*
+- **Recursive descent**: a parsing technique with one function per grammar rule, where rules call each other recursively. *First seen: Module 3.*
+- **Redex**: short for *reducible expression*: a sub-term matching the left side of a rewrite rule. *First seen: Module 7.*
+- **`redex.ts`**: the module file with the redex finder and classifiers. *First seen: Module 7.*
+- **`reduce.ts`**: the module file with contexts, `contract`, `stepAt`, `oneStepReducts` and `stepAtDB`. *First seen: Module 8.*
+- **Reduct**: the whole term after a step, `C[contractum]`. More generally, any term reachable by reduction. *First seen: Module 8.*
+- **Reduction graph**: all terms reachable from a start term (up to α), with one edge per one-step reduction. *First seen: Module 10.*
+- **`reductionGraph(t, opts)`**: breadth-first construction of the reduction graph, with node and size limits and a `truncated` flag. *First seen: Module 10.*
+- **Regression tests (`tests/`)**: every earlier module's tests, copied into each later module so they keep passing. *First seen: Module 2.*
+- **`renameBinder(t, y)`**: α-converts the outermost λ to use `y`. It refuses, with a reason, if either capture condition fails. *First seen: Module 4.*
+- **`renderTree(t)`**: draws a term as an ASCII tree, one line per node. *First seen: Module 1.*
+- **REPL (Read–Eval–Print Loop)**: an interactive prompt that reads a line, evaluates it and prints the result. `repl.ts` + `repl-cli.ts`. *First seen: Module 12.*
+- **Residual**: what becomes of a redex R after a different redex S is contracted: copied, erased, or kept (possibly modified). *First seen: Module 10.*
+- **`residuals(t, fired, tracked)`**: the paths of the tracked redex's residuals after firing another redex, found by marking its λ. *First seen: Module 10.*
+- **Round trip**: `parse(print(t)) = t`, the property that shows the printer and parser agree (checked on 5000 random terms). *First seen: Module 3.*
+- **`ruleChain(ctx)`**: the congruence rules a step at that context uses, outside-in, ending with β or η. *First seen: Module 8.*
+- **ξ-rule (xi)**: the congruence rule allowing a step inside the body of a λ: `M → M'` implies `λx. M → λx. M'`. *First seen: Module 8.*
+- **`runScript(session, src)`**: runs many REPL lines and returns a transcript. *First seen: Module 12.*
+- **`run(t, strategy, opts)`**: repeatedly picks and contracts until the strategy is done, fuel runs out, or the term exceeds `maxSize`. It returns steps, status and result. *First seen: Module 9.*
+- **Scannerless parsing**: parsing directly from characters without a separate lexer. It is the alternative this course does not use. *First seen: Module 2.*
+- **Scope (implementation)**: the stack of binders passed on the way down to a node, searched innermost-first. *First seen: Module 4.*
+- **Sentinel**: an artificial marker element that removes a special case (e.g. the `eof` token). *First seen: Module 2.*
+- **Shadowing vs capture**: shadowing is a legal inner rebinding written in the source. Capture is a binding change caused by a faulty operation. *First seen: Module 5.*
+- **`shift(d, c, t)`**: adds `d` to every index ≥ cutoff `c`. The cutoff protects indices bound inside `t`. *First seen: Module 6.*
+- **Shifting**: adjusting the free indices of a term when it moves under (+1) or out from (−1) binders. A missed shift is capture in numeric form. *First seen: Module 6.*
+- **Simultaneous substitution**: replacing several variables at once without re-scanning the replacements, so it can swap. `substMany` in code. *First seen: Module 12.*
+- **`spans.ts`**: the module file with `printWithSpans`, `spanOf` and `markAt`. *First seen: Module 7.*
+- **Spine (function spine)**: the chain of function parts in `M N1 … Nk` = `((M N1) …) Nk`. Its bottom `M` is the *head*. *First seen: Module 7.*
+- **S (substitution combinator)**: `λx. λy. λz. x z (y z)`. Together with K it can express every λ-term (Module 17). *First seen: Module 1.*
+- **`show(t)`**: prints the constructor calls that rebuild a term, e.g. `App(Lam("x", Var("x")), Var("y"))`. *First seen: Module 1.*
+- **`size(t)`**: the total number of nodes in a term. *First seen: Module 1.*
+- **Standardization theorem**: if a term has a normal form, normal-order reduction reaches it. It is observed on random terms in Module 9. *First seen: Module 9.*
+- **Static expansion**: definitions capture the meaning of the names they use at definition time. Redefining a name later doesn't change them. *First seen: Module 12.*
+- **Stealth capture**: a capture that leaves the result's free-variable set unchanged, because the captured name also occurs free elsewhere. Example: `((λy. x) y)[x := y]`. *First seen: Module 5.*
+- **`stepAtDB(d, path)`**: the same β-step on a nameless term, used for cross-checking. *First seen: Module 8.*
+- **`stepAt(t, path, kind?)`**: one step at a path, returning the path, context, redex, contractum, reduct and renames. *First seen: Module 8.*
+- **Strategy**: a function `Term → Redex | null` that chooses the next redex to contract. *First seen: Module 9.*
+- **`strategy.ts`**: the module file with the five strategies, `run` and trace formatting. *First seen: Module 9.*
+- **Stuck term**: a term the strategy can't advance even though it isn't a value, e.g. `x V` under call-by-value. *First seen: Module 9.*
+- **`substDB(j, s, t)`**: replaces index `j` in `t` by `s`, shifting `s` up by one under each λ. *First seen: Module 6.*
+- **`substDBNoShift` / `substTopNoShift`**: the same operations with the classic missing-shift bug, kept for comparison. *First seen: Module 6.*
+- **Substitution Lemma**: `M[x:=N][y:=L] ≡α M[y:=L][x:=N[y:=L]]` when `x ≠ y` and `x ∉ FV(L)`. Tested on random terms. *First seen: Module 5.*
+- **Substitution (`M[x := N]`)**: replacing every free occurrence of `x` in `M` with `N`. *First seen: Module 5.*
+- **`SubstLog`**: `{ renames: { from, to }[] }`, the binder renames performed by `subst`. *First seen: Module 5.*
+- **`subst(M, x, N, log?)`**: capture-avoiding substitution `M[x := N]`. It optionally logs binder renames. *First seen: Module 5.*
+- **`substNaive(M, x, N)`**: substitution that respects shadowing but can capture. It is kept for comparison. *First seen: Module 5.*
+- **`substTop(body, s)`**: the β-step's substitution on nameless terms: `shift(-1, 0, substDB(0, shift(1, 0, s), body))`. *First seen: Module 6.*
+- **`subst.ts`**: the module file with `subst`, `substNaive` and `freshName`. *First seen: Module 5.*
+- **`subtermAt(t, path)`**: the sub-term at a path. It throws if the path doesn't exist. *First seen: Module 7.*
+- **`SyntaxErrorSignal`**: an internal class thrown to unwind the parser on the first syntax error. It is caught inside `parse` and never escapes. *First seen: Module 3.*
+- **Term**: any λ-calculus expression. It is exactly one of variable, abstraction or application. In the code it is the `Term` type in `term.ts`. *First seen: Module 1.*
+- **`term.ts`**: the module file defining the `Term` type, its constructors and its measurements. *First seen: Module 1.*
+- **Thunk**: a computation delayed behind a λ (`λd. e`), so a strict strategy won't evaluate it until it's applied. *First seen: Module 13.*
+- **`toDeBruijn(t, Γ)`**: converts a named term to a nameless one. It throws if a free variable is missing from Γ. *First seen: Module 6.*
+- **Token**: `{ kind, text, start, end }`, one meaningful unit of source text. *First seen: Module 2.*
+- **`tokenize(src)`**: the lexer entry point. It returns `{ tokens, errors }` and never throws. *First seen: Module 2.*
+- **`TokenKind`**: `"lambda" | "dot" | "lparen" | "rparen" | "ident" | "eof"`. *First seen: Module 2.*
+- **`toWHNF` / `toHNF` / `toBetaNF` / `toBetaEtaNF`**: normalizers that run call-by-name, head reduction, normal order and βη normal order respectively. *First seen: Module 11.*
+- **Trace**: the recorded sequence of steps of a run, each with the redex's path and the terms before and after. *First seen: Module 9.*
+- **Trace (parser)**: the optional log of grammar rules entered, indented by depth, from `parse(src, { trace: true })`. *First seen: Module 3.*
+- **`trailing` (printer flag)**: true when nothing follows the current term before the enclosing `)` or the end of the text. It decides whether a λ needs parentheses. *First seen: Module 1.*
+- **Triangle property (Takahashi)**: every one-step reduct N of M reduces to M\*. Observed here as N →* M\*. *First seen: Module 10.*
+- **`truthTable(op, arity, defs)`**: evaluates a boolean operator on every input combination by reduction and decodes the results. *First seen: Module 13.*
+- **twice / thrice**: `λf x. f (f x)` / `λf x. f (f (f x))`. Composing them computes powers: `thrice twice` applies f 2³ times. *First seen: Module 12.*
+- **Unique normal forms**: every reduction path that reaches a β-normal form reaches the same one (up to α), a consequence of Church–Rosser. *First seen: Module 9.*
+- **Unsolvable term**: a term with no head normal form, e.g. `Ω` or `λx. Ω`. It is the λ-calculus's notion of "meaningless". *First seen: Module 11.*
+- **Value**: in call-by-value, a λ-abstraction or a variable, the only things passed as arguments. *First seen: Module 11.*
+- **Variable** (`x`): a term that refers to a name. It is a leaf node, AST kind `"var"`. *First seen: Module 1.*
+- **Variable convention (Barendregt)**: the assumption that all bound variables are distinct from each other and from the free variables. `canonicalize` makes it true. *First seen: Module 4.*
+- **Vocabulary web**: a set of `concept_*.html` pages plus a hub, built for clusters of commonly confused terms. *First seen: Module 5.*
+- **Weak head normal form (WHNF)**: a λ-abstraction, or a neutral term. It is where lazy evaluation stops. *First seen: Module 11.*
+- **Weak-head redex**: the head redex of a term that does not start with λ. Terms starting with λ have none. *First seen: Module 7.*

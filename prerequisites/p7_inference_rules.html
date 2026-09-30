@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inference-Rule Notation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700;800&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../shared/course.css">
+</head>
+<body style="--accent:#d4a017;--accent-rgb:245,200,66">
+<nav class="topbar"><a class="brand" href="../index.html">λ <span>Alonzo</span></a><a href="../prerequisites.html">← All prerequisites</a><span class="spacer"></span><span class="muted">P7 of 8</span></nav>
+<header class="hero">
+  <div class="badge">PREREQUISITE P7</div>
+  <h1>Inference-Rule <span>Notation</span></h1>
+  <p class="tagline">The fraction bar that fills every programming-languages paper. Once you can read it, papers become readable.</p>
+</header>
+<main class="container">
+
+<section id="fraction-bar">
+  <h2><span class="num">P7.1</span>Above the line: if. Below the line: then.</h2>
+  <div class="rules"><span class="rule"><span class="prem">premise₁ &nbsp;&nbsp; premise₂</span><span class="concl">conclusion</span></span></div>
+  <p>Read it: "if everything above the line holds, then the thing below the line holds." That's all. A rule with
+  <strong>nothing</strong> above the line is an <strong>axiom</strong>: it holds unconditionally.</p>
+  <div class="analogy"><div class="big">An inference rule is a Lego instruction step.</div>
+  <p>"Given these two finished pieces (above the line), you may snap them into this bigger piece (below)." Axioms are
+  the raw bricks you can always take from the box. A full <strong>derivation</strong> is the finished model, built only
+  by following steps.</p></div>
+</section>
+
+<section id="judgment">
+  <h2><span class="num">P7.2</span>Judgments</h2>
+  <p>The statements above and below the line are called <strong>judgments</strong>. They are claims of a fixed shape. Common ones:</p>
+  <div class="table-wrap"><table class="data">
+    <tr><th>Judgment</th><th>Read as</th><th>First used</th></tr>
+    <tr><td><code>M → N</code></td><td>M steps to N</td><td>Module 8</td></tr>
+    <tr><td><code>Γ ⊢ M : T</code></td><td>in context Γ, term M has type T</td><td>Module 24</td></tr>
+    <tr><td><code>ρ ⊢ M ⇓ v</code></td><td>in environment ρ, M evaluates to value v</td><td>Module 19</td></tr>
+  </table></div>
+  <p><code>Γ</code> (Gamma) is a <strong>context</strong>: a list of assumptions like <code>x : Int, f : Int → Int</code>. The turnstile
+  <code>⊢</code> separates assumptions from the claim.</p>
+</section>
+
+<section id="example">
+  <h2><span class="num">P7.3</span>Example: the congruence rules for β-reduction</h2>
+  <p>This is a real rule set from Module 8. The β-rule says what a single step does, and the other rules say you may take that step anywhere inside a term:</p>
+  <div class="rules">
+    <span class="rule"><span class="prem">&nbsp;</span><span class="concl">(λx. M) N → M[x := N]</span></span>
+    <span class="rule"><span class="prem">M → M'</span><span class="concl">M N → M' N</span></span>
+    <span class="rule"><span class="prem">N → N'</span><span class="concl">M N → M N'</span></span>
+    <span class="rule"><span class="prem">M → M'</span><span class="concl">λx. M → λx. M'</span></span>
+  </div>
+  <p>The first is an axiom (β). The other three say "a step inside the function part, the argument part, or a body is a
+  step of the whole."</p>
+</section>
+
+<section id="derivation-tree">
+  <h2><span class="num">P7.4</span>Derivations are trees, and checking them is recursion</h2>
+  <p>Stack rules on top of each other and you get a <strong>derivation tree</strong>, with the final claim at the bottom and
+  axioms at the leaves. A type checker (Module 24) is a recursive function that <em>builds</em> this tree, and its failure
+  message is "no rule's bottom line matches." Tip: to read a rule as code, read it <strong>bottom-up</strong>. "To show the
+  bottom, go show the tops."</p>
+</section>
+
+<section id="in-this-course">
+  <h2><span class="num">P7.5</span>Where this shows up</h2>
+  <ul>
+    <li><strong>Module 8</strong>: the congruence rules above, as code.</li>
+    <li><strong>Modules 24–31</strong>: every type system is a rule set, and every checker walks it.</li>
+    <li><strong>Track H7</strong>: Milner's LCF makes "theorems can only come from rules" a guarantee enforced by types.</li>
+  </ul>
+</section>
+<div class="module-nav"><a href="p6_rewriting_systems.html"><span class="dir">← Previous</span>P6 Rewriting Systems</a><a class="next" href="p8_reading_typescript.html"><span class="dir">Next →</span>P8 Reading the Course's TypeScript</a></div>
+</main>
+<footer>Alonzo · Prerequisite P7</footer>
+</body>
+</html>

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alonzo Prerequisites</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700;800&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared/course.css">
+</head>
+<body style="--accent:#d4a017;--accent-rgb:245,200,66">
+<nav class="topbar"><a class="brand" href="index.html">λ <span>Alonzo</span></a><a href="ROADMAP.md">Roadmap</a><a href="GLOSSARY.md">Glossary</a><span class="spacer"></span></nav>
+
+<header class="hero">
+  <div class="badge">PREREQUISITES</div>
+  <h1>The Eight Ideas <span>Everything Else Assumes</span></h1>
+  <p class="tagline">Every module links back to specific sections of these pages with small <code>#tag</code> links. It never re-teaches them inline. Read one when a module sends you here, not all of them up front.</p>
+</header>
+
+<main class="container">
+<section>
+  <h2>Why these eight?</h2>
+  <p>An OS course assumes registers, endianness, memory addressing and instructions. The λ-calculus has its own
+  primitives. They are not hardware ideas. They are ideas about <strong>functions, names, trees and rules</strong>.
+  If you know these eight things, every module in the course is readable.</p>
+
+  <div class="card-grid">
+    <a class="card" href="prerequisites/p1_functions_as_mappings.html"><div class="n">P1</div><div class="t">Functions as Mappings</div><div class="d">A function is a rule from inputs to outputs. It is also a value you can pass around. Currying.</div></a>
+    <a class="card" href="prerequisites/p2_variables_binding_scope.html"><div class="n">P2</div><div class="t">Variables, Binding &amp; Scope</div><div class="d">Which <code>x</code> is this <code>x</code>? Binders, scopes and shadowing.</div></a>
+    <a class="card" href="prerequisites/p3_trees_and_recursion.html"><div class="n">P3</div><div class="t">Trees &amp; Recursion</div><div class="d">Programs are trees, and trees are processed by functions that call themselves on the children.</div></a>
+    <a class="card" href="prerequisites/p4_grammars_and_bnf.html"><div class="n">P4</div><div class="t">Grammars &amp; BNF</div><div class="d">Writing down which strings are legal, plus precedence and associativity.</div></a>
+    <a class="card" href="prerequisites/p5_structural_induction.html"><div class="n">P5</div><div class="t">Structural Induction</div><div class="d">Proving "for every term…" by handling each tree shape once.</div></a>
+    <a class="card" href="prerequisites/p6_rewriting_systems.html"><div class="n">P6</div><div class="t">Rewriting Systems</div><div class="d">Computation as "find a pattern, replace it". Normal forms, termination, confluence.</div></a>
+    <a class="card" href="prerequisites/p7_inference_rules.html"><div class="n">P7</div><div class="t">Inference-Rule Notation</div><div class="d">The fraction-bar rules that every type system and semantics paper uses.</div></a>
+    <a class="card" href="prerequisites/p8_reading_typescript.html"><div class="n">P8</div><div class="t">Reading the Course's TypeScript</div><div class="d">Tagged unions, <code>switch</code> on <code>kind</code>, and how to run a <code>.ts</code> file with Node.</div></a>
+  </div>
+</section>
+
+<section>
+  <h2>Which module needs which idea</h2>
+  <div class="table-wrap"><table class="data">
+    <tr><th>Idea</th><th>First needed in</th><th>Heavily used in</th></tr>
+    <tr><td>P1 Functions as Mappings</td><td>Module 1</td><td>Phase 3 (encodings), Phase 4 (closures)</td></tr>
+    <tr><td>P2 Variables, Binding &amp; Scope</td><td>Module 1</td><td>Modules 4–6, 19, C7</td></tr>
+    <tr><td>P3 Trees &amp; Recursion</td><td>Module 1</td><td>every module</td></tr>
+    <tr><td>P4 Grammars &amp; BNF</td><td>Module 2</td><td>Modules 3, C1</td></tr>
+    <tr><td>P5 Structural Induction</td><td>Module 4</td><td>Modules 5, 10, 25, 31</td></tr>
+    <tr><td>P6 Rewriting Systems</td><td>Module 7</td><td>Phase 2, Module 32</td></tr>
+    <tr><td>P7 Inference-Rule Notation</td><td>Module 8</td><td>Phases 5–6, Track H7–H8</td></tr>
+    <tr><td>P8 Reading the Course's TypeScript</td><td>Module 1</td><td>every module</td></tr>
+  </table></div>
+</section>
+
+<section>
+  <h2>How the course is wired</h2>
+  <p>Each module folder is a standalone, runnable snapshot. It has <code>src/</code>, <code>test.ts</code>,
+  <code>demo.ts</code>, <code>DECISIONS.md</code> and <code>tutorial.html</code>. The webapp's Labs import the same
+  <code>src/</code> files, so what you poke at in the browser is exactly the code you read.</p>
+  <p>Start here: <a href="track1-engine/01_term_ast/tutorial.html">Module 1: Term AST &amp; Printer →</a></p>
+</section>
+</main>
+<footer>Alonzo: Lambda Calculus from Scratch · <a href="index.html">Course index</a></footer>
+</body>
+</html>

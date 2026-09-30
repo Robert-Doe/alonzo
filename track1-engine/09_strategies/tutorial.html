@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reduction Strategies & Traces</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700;800&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../shared/course.css">
+</head>
+<body>
+<nav class="topbar"><a class="brand" href="../../index.html">λ <span>Alonzo</span></a><a href="../../prerequisites.html">Prerequisites</a><a href="../../GLOSSARY.md">Glossary</a><a href="DECISIONS.md">Decisions</a><span class="spacer"></span><span class="muted">Track 1 · Phase 2 · Module 9 of 34</span></nav>
+
+<header class="hero">
+  <div class="badge">MODULE 09</div>
+  <h1>Reduction <span>Strategies</span> &amp; Traces</h1>
+  <p class="tagline">Which redex should go next? Turn the answer into a function, run it until it stops, and discover that the choice decides whether a program finishes at all.</p>
+  <div class="hero-grid">
+    <div class="hero-stat"><div class="num">5</div><div class="label">strategies raced</div></div>
+    <div class="hero-stat"><div class="num">500 vs 0</div><div class="label">normal vs applicative on (λd. t) Ω</div></div>
+    <div class="hero-stat"><div class="num">112/112</div><div class="label">tests passing</div></div>
+  </div>
+</header>
+
+<main class="container">
+
+<section id="s00">
+  <h2><span class="num">00</span>Prerequisites</h2>
+  <div class="prereq-bar">
+    <a class="tag" href="../../prerequisites/p6_rewriting_systems.html#choice">P6.3 choice, termination, confluence</a>
+    <a class="tag" href="../../prerequisites/p6_rewriting_systems.html#normal-form">P6.2 normal forms</a>
+  </div>
+  <p>From the course: <a href="../07_redexes/tutorial.html">Module 7's named positions</a> (leftmost-outermost, innermost, head, weak-head) and <a href="../08_beta/tutorial.html">Module 8's <code>stepAt</code></a>. Module 8's Brain Exercise (3 steps vs 2) is where this module starts.</p>
+</section>
+
+<section id="s01">
+  <h2><span class="num">01</span>The Big Analogy</h2>
+  <div class="analogy">
+    <div class="big">A strategy is a kitchen's rule for which order ticket to cook next.</div>
+    <p>An order <code>(λx. y) Ω</code> says: "prepare Ω, then throw it away and serve <code>y</code>." And Ω is a dish that is never finished.</p>
+    <ul>
+      <li><strong>Applicative order</strong> is the careful cook who prepares every ingredient before assembling. They start on Ω and are still cooking at closing time. (<em>Out of fuel.</em>)</li>
+      <li><strong>Normal order</strong> reads the outermost ticket first: "throw away the argument, serve y." One step, done.</li>
+      <li>But ask for <code>(λx. x x) (prep z)</code>, "use the prepped ingredient twice," and the careful cook preps once and plates twice (2 steps). The outermost-first cook copies the <em>raw</em> ingredient into both plates and preps it twice (3 steps).</li>
+    </ul>
+    <p>Neither rule wins every night. That's the whole story of strict vs lazy evaluation, and this module measures it.</p>
+  </div>
+</section>
+
+<section id="s02">
+  <h2><span class="num">02</span>What Happens, Step by Step</h2>
+  <ol class="steps">
+    <li>A <strong>strategy</strong> is a function: given a term, return the redex to contract next, or <code>null</code> if it has nothing more to do.</li>
+    <li><code>run(t, strategy, { fuel })</code> loops: ask the strategy, contract its redex with Module 8's <code>stepAt</code>, and record the step.</li>
+    <li>It stops with <code>done</code> when the strategy returns <code>null</code>, <code>out-of-fuel</code> after <code>fuel</code> steps, or <code>too-big</code> if the term exceeds the size limit.</li>
+    <li>It also reports whether the final term is β-normal. For weak strategies, "done" may mean "stopped at a λ or a stuck head."</li>
+    <li><code>formatTrace</code> prints each intermediate term with the chosen redex in <code>[brackets]</code>.</li>
+  </ol>
+</section>
+
+<section id="s03">
+  <h2><span class="num">03</span>The Map: The Race Table</h2>
+  <p>Real <code>npm run demo</code> output, fuel = 50:</p>
+<pre><code><span class="o">(λx. y) ((λx. x x) (λx. x x))
+  normal order       1 step, β-normal form                          y
+  applicative order  OUT OF FUEL after 50 steps                     (λx. y) ((λx. x x) λx. x x)
+  call-by-name       1 step, β-normal form                          y
+  call-by-value      OUT OF FUEL after 50 steps                     (λx. y) ((λx. x x) λx. x x)
+  head reduction     1 step, β-normal form                          y
+
+(λx. x x) ((λy. y) z)
+  normal order       3 steps, β-normal form                         z z
+  applicative order  2 steps, β-normal form                         z z
+  call-by-name       2 steps, stopped (not β-normal …)              z ((λy. y) z)
+  call-by-value      2 steps, β-normal form                         z z
+  head reduction     2 steps, stopped (not β-normal …)              z ((λy. y) z)</span></code></pre>
+  <div class="table-wrap"><table class="map-table">
+    <tr><th>Strategy</th><th>Picks</th><th>Under λ?</th><th>Inside arguments?</th><th>Stops at</th><th>Real-world cousin</th></tr>
+    <tr><td>normal order</td><td>leftmost-outermost</td><td>yes</td><td>yes (eventually)</td><td>β-normal form</td><td>theory's "complete" strategy</td></tr>
+    <tr><td>applicative order</td><td>leftmost-innermost</td><td>yes</td><td>yes, first</td><td>β-normal form</td><td>eager evaluation, fully</td></tr>
+    <tr><td>call-by-name</td><td>weak-head redex</td><td>no</td><td>no</td><td>weak head normal form</td><td>lazy evaluation, without sharing</td></tr>
+    <tr><td>call-by-value</td><td>function, argument, then contract</td><td>no</td><td>yes, first</td><td>a value</td><td>OCaml, JavaScript, Scheme</td></tr>
+    <tr><td>head reduction</td><td>head redex</td><td>yes</td><td>no</td><td>head normal form</td><td>theory of "meaningful" terms</td></tr>
+  </table></div>
+  <a class="lab-link" data-lab="09" data-term="(λx. y) ((λx. x x) (λx. x x))">Run the race in the Lab</a><span class="lab-note"></span>
+</section>
+
+<section id="s04">
+  <h2><span class="num">04</span>The Code, Explained</h2>
+  <h3>Four strategies are one-liners over Module 7</h3>
+  <p class="file-label">src/strategy.ts</p>
+<pre><code><span class="k">export const</span> normalOrder      = { name: <span class="s">"normal order"</span>,      pick: t =&gt; leftmostOutermost(t) };
+<span class="k">export const</span> applicativeOrder = { name: <span class="s">"applicative order"</span>, pick: t =&gt; leftmostInnermost(t) };
+<span class="k">export const</span> callByName       = { name: <span class="s">"call-by-name"</span>,      pick: t =&gt; weakHeadRedex(t) };
+<span class="k">export const</span> headReduction    = { name: <span class="s">"head reduction"</span>,    pick: t =&gt; headRedex(t) };</code></pre>
+  <p>All the hard work was naming positions in Module 7. A strategy just picks one.</p>
+
+  <h3>Call-by-value: Plotkin's evaluation order</h3>
+<pre><code><span class="k">function</span> cbvPick(u: Term, path: Step[]): Redex | <span class="k">null</span> {
+  <span class="k">if</span> (u.kind !== <span class="s">"app"</span>) <span class="k">return null</span>;                                   <span class="c">// a value: nothing to do (never go under λ)</span>
+  <span class="k">if</span> (!isValue(u.fn)) <span class="k">return</span> cbvPick(u.fn, [...path, <span class="s">"fn"</span>]);            <span class="c">// function first</span>
+  <span class="k">if</span> (!isValue(u.arg)) <span class="k">return</span> cbvPick(u.arg, [...path, <span class="s">"arg"</span>]);         <span class="c">// then the argument</span>
+  <span class="k">return</span> u.fn.kind === <span class="s">"lam"</span> ? { kind: <span class="s">"beta"</span>, path, term: u } : <span class="k">null</span>;  <span class="c">// (λx. M) V → …;  x V is stuck</span>
+}</code></pre>
+
+  <h3>Running with fuel</h3>
+<pre><code><span class="k">for</span> (;;) {
+  <span class="k">const</span> r = strategy.pick(cur);
+  <span class="k">if</span> (!r) { status = <span class="s">"done"</span>; <span class="k">break</span>; }
+  <span class="k">if</span> (n &gt;= fuel) { status = <span class="s">"out-of-fuel"</span>; <span class="k">break</span>; }
+  <span class="k">const</span> next = stepAt(cur, r.path, <span class="s">"beta"</span>).reduct;
+  <span class="c">// … record, count, check size …</span>
+}</code></pre>
+  <div class="bullets"><div class="label">BULLET POINTS</div><ul>
+    <li>A strategy is just "which redex next?". The step itself is always Module 8's.</li>
+    <li>Normal order is <em>complete</em>: if any strategy finds a normal form, normal order does too (standardization).</li>
+    <li>Applicative order avoids duplicated work, but can die on arguments that are never used.</li>
+    <li>"Out of fuel" is an honest answer. No evaluator can always decide whether a term stops.</li>
+  </ul></div>
+</section>
+
+<section id="s05">
+  <h2><span class="num">05</span>Limits: What You Cannot Do Yet</h2>
+  <div class="compare">
+    <div class="cant"><h4>Can't do yet</h4><ul>
+      <li>Get applicative order's efficiency <em>and</em> normal order's completeness. That's call-by-need (Module 22).</li>
+      <li>Prove two paths meet again. So far different strategies' results only <em>happen</em> to agree (Module 10).</li>
+      <li>Run fast: every step re-searches the whole term (machines, Modules 19–22).</li>
+      <li>Decide whether a term will ever stop. Nobody can (Track H3).</li>
+    </ul></div>
+    <div class="can"><h4>Can do now</h4><ul>
+      <li>Run any term to completion under five strategies, safely, with fuel and a size cap.</li>
+      <li>Print a trace with each chosen redex marked.</li>
+      <li>Show on 2000 random terms that normal forms are unique, and that normal order finds them whenever applicative order does.</li>
+    </ul></div>
+  </div>
+</section>
+
+<section id="s06">
+  <h2><span class="num">06</span>Run It</h2>
+  <div class="run-box"><h4>Run the tests</h4>
+  <pre><code>cd alonzo/track1-engine/09_strategies
+npm test</code></pre>
+  <div class="desc">13 new + 99 carried from Modules 1–8 (about 4 seconds). Actual summary:</div>
+<pre><code><span class="o"># tests 112
+# pass 112
+# fail 0</span></code></pre>
+  <div class="desc">Then <code>npm run demo</code>. Actual output (the race is in 03):</div>
+<pre><code><span class="o">normal order on (λx. x x) ((λy. y) z):
+   [(λx. x x) ((λy. y) z)]
+   [(λy. y) z] ((λy. y) z)
+   z ([(λy. y) z])
+→  z z
+applicative order on the same term:
+   (λx. x x) ([(λy. y) z])
+   [(λx. x x) z]
+→  z z
+applicative order on (λx. y) Ω, first 3 steps:
+   (λx. y) ([(λx. x x) λx. x x])
+   (λx. y) ([(λx. x x) λx. x x])
+   (λx. y) ([(λx. x x) λx. x x])
+→  (λx. y) ((λx. x x) λx. x x)
+
+== Growth: (λx. x x x) (λx. x x x) under normal order ==
+  sizes: 13 → 20 → 27 → 34 → 41 → 48 → 55
+
+== Standardization, observed on 2000 random terms ==
+  both reach a normal form:            1997  (different normal forms: 0)
+  only normal order reaches one:       0
+  neither (within the limits):         3
+  only applicative order reaches one:  0
+
+== Planted divergence: (λd. t) Ω for 500 random terms t ==
+  t itself has a normal form:          500
+  normal order normalizes (λd. t) Ω:   500
+  applicative order normalizes it:     0</span></code></pre></div>
+  <div class="callout red"><div class="label">Getting a blank or broken result?</div>
+  <ul>
+    <li><strong>"OUT OF FUEL" on a term you think finishes:</strong> raise <code>fuel</code>. Out-of-fuel means "not yet", not "never".</li>
+    <li><strong>CBN or CBV "stopped" with redexes left:</strong> by design, they don't reduce under λ (and CBN not inside arguments). Use normal order for full normal forms.</li>
+    <li><strong>Tests take much longer than about 4 s:</strong> check you didn't raise the property tests' <code>maxSize</code>. Looping terms grow until the cap (see DECISIONS.md).</li>
+  </ul></div>
+  <a class="lab-link" data-lab="09">Open Lab 09: Strategy Race</a><span class="lab-note"></span>
+</section>
+
+<section id="s07">
+  <h2><span class="num">07</span>Brain Exercise</h2>
+  <div class="brain"><div class="label">Think before you reveal</div>
+  <p>Random terms almost never separate the two orders (the demo found 0 of 2000). <strong>Design, from scratch, (1) a term where applicative order is strictly <em>faster</em>
+  than normal order, and (2) a term where normal order finishes and applicative order never does. What single feature does each term need?</strong></p>
+  <a class="lab-link" data-lab="09">The Lab's checker recognizes both</a>
+  <details><summary>Reveal the answer</summary>
+  <p>(1) A function that uses its argument <strong>more than once</strong>, given an argument that still has work in it: <code>(λx. x x) ((λy. y) z)</code>, 2 steps vs 3. The feature is
+  <em>duplication</em>. Normal order copies unevaluated work.</p>
+  <p>(2) A function that <strong>ignores</strong> its argument, given an argument that never finishes: <code>(λx. y) Ω</code>, or any <code>(λd. t) Ω</code>. The feature is
+  <em>discarding</em>. Applicative order does work nobody needs, and here that work is infinite.</p>
+  <p>Random terms rarely have both "a function that discards" and "a divergent argument" in the right places, which is why a fair experiment has to <em>plant</em> the situation.
+  Real languages meet it constantly: <code>if c then e1 else e2</code> must not evaluate both branches, which is why every strict language special-cases <code>if</code>.
+  Module 13 builds <code>if</code> from λ and watches exactly this.</p></details></div>
+</section>
+
+<section id="s08">
+  <h2><span class="num">08</span>There Are No Dumb Questions</h2>
+  <div class="qa">
+    <p class="q">If normal order is complete, why doesn't every language use it?</p>
+    <p class="a">Duplication. Normal order can repeat work exponentially often. Haskell uses call-by-<em>need</em>: normal-order-like choice, plus sharing so each argument is evaluated at most once (Module 22).</p>
+    <p class="q">Is call-by-value the same as applicative order?</p>
+    <p class="a">Close, but no. Both evaluate arguments first, but CBV never goes under a λ. <code>λx. (λy. y) x</code> is already a value for CBV (0 steps), while applicative order reduces inside it.</p>
+    <p class="q">Why did 3 random terms reach no normal form under either order?</p>
+    <p class="a">Within the limits (fuel and size cap), they either loop or grow too large. The demo can't tell you which, because that's undecidable in general. "Within the limits" is doing honest work in that sentence.</p>
+    <p class="q">Does "different normal forms: 0" prove that normal forms are unique?</p>
+    <p class="a">No, it's evidence on 2000 terms. The proof is the Church–Rosser theorem, which Module 10 explores by drawing every reduction path of a term and watching them meet.</p>
+  </div>
+</section>
+
+<section id="s09">
+  <h2><span class="num">09</span>What's Next</h2>
+  <p>Every strategy that finished agreed on the answer. Coincidence? <strong>Module 10</strong> stops choosing and explores <em>all</em> choices at once: the <strong>reduction graph</strong>
+  of a term, with every path drawn. It tracks <strong>residuals</strong> (what happens to one redex when you fire another) and checks <strong>Church–Rosser</strong> empirically:
+  whenever paths fork, they can be brought back together.</p>
+</section>
+
+<div class="module-nav">
+  <a href="../08_beta/tutorial.html"><span class="dir">← Previous</span>Module 8: β-Contraction &amp; One-Step Reduction</a>
+  <a class="next" href="../10_confluence/tutorial.html"><span class="dir">Next →</span>Module 10: Reduction Graphs &amp; Church–Rosser</a>
+</div>
+</main>
+<footer>Alonzo · Track 1 · Module 9 · <a href="DECISIONS.md">DECISIONS.md</a> · <a href="../../GLOSSARY.md">Glossary</a></footer>
+<script src="../../shared/course.js"></script>
+</body>
+</html>

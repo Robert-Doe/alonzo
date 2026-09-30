@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Term AST & Printer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700;800&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../shared/course.css">
+</head>
+<body style="--accent:#82aaff;--accent-rgb:56,189,248">
+<nav class="topbar"><a class="brand" href="../../index.html">λ <span>Alonzo</span></a><a href="../../prerequisites.html">Prerequisites</a><a href="../../GLOSSARY.md">Glossary</a><a href="DECISIONS.md">Decisions</a><span class="spacer"></span><span class="muted">Track 1 · Phase 1 · Module 1 of 34</span></nav>
+
+<header class="hero">
+  <div class="badge">MODULE 01</div>
+  <h1>Term AST &amp; <span>Printer</span></h1>
+  <p class="tagline">The entire λ-calculus is built from three kinds of node. Before you can compute anything, you need to be able to <em>hold</em> a term as data and <em>write it back</em> as text without anyone misreading it.</p>
+  <div class="hero-grid">
+    <div class="hero-stat"><div class="num">3</div><div class="label">node kinds, total</div></div>
+    <div class="hero-stat"><div class="num">3</div><div class="label">places parens are required</div></div>
+    <div class="hero-stat"><div class="num">13/13</div><div class="label">tests passing</div></div>
+  </div>
+</header>
+
+<main class="container">
+
+<section id="s00">
+  <h2><span class="num">00</span>Prerequisites</h2>
+  <p>This module assumes the following. Click a tag if any of it feels shaky:</p>
+  <div class="prereq-bar">
+    <a class="tag" href="../../prerequisites/p1_functions_as_mappings.html#currying">P1.4 currying</a>
+    <a class="tag" href="../../prerequisites/p1_functions_as_mappings.html#application">P1.5 application</a>
+    <a class="tag" href="../../prerequisites/p2_variables_binding_scope.html#binder">P2.1 binders</a>
+    <a class="tag" href="../../prerequisites/p3_trees_and_recursion.html#ast">P3.2 ASTs</a>
+    <a class="tag" href="../../prerequisites/p3_trees_and_recursion.html#recursion-on-trees">P3.3 recursion on trees</a>
+    <a class="tag" href="../../prerequisites/p4_grammars_and_bnf.html#assoc-precedence">P4.3 associativity</a>
+    <a class="tag" href="../../prerequisites/p5_structural_induction.html#example">P5.2 induction example</a>
+    <a class="tag" href="../../prerequisites/p8_reading_typescript.html#tagged-unions">P8.2 tagged unions</a>
+    <a class="tag" href="../../prerequisites/p8_reading_typescript.html#running">P8.3 running .ts</a>
+  </div>
+</section>
+
+<section id="s01">
+  <h2><span class="num">01</span>The Big Analogy</h2>
+  <div class="analogy">
+    <div class="big">A λ-term is a stack of recipe cards clipped together, and printing it is reading that stack aloud over the phone.</div>
+    <p>There are exactly three kinds of card on your kitchen table:</p>
+    <ul>
+      <li><strong>An ingredient slip</strong> with just a name on it: "<em>x</em>." That's a <strong>variable</strong>.</li>
+      <li><strong>A recipe card</strong> whose header says "<em>Given an ingredient, call it x:</em>" and whose body is another card (the instructions). That's an <strong>abstraction</strong>, <code>λx. body</code>. The header doesn't say <em>what</em> x is. It's a blank waiting to be filled.</li>
+      <li><strong>A paper clip</strong> joining two cards: "<em>use this card (left) on that one (right)</em>." That's an <strong>application</strong>, <code>fn arg</code>.</li>
+    </ul>
+    <p>Clip cards inside cards inside cards, and you have a <strong>tree</strong>. On the table, the structure is obvious: you can
+    <em>see</em> which clip holds what.</p>
+    <p>Now phone a friend and describe the stack so they can rebuild it. Words come out one at a time, flat. If you say
+    "recipe given x: x, clipped to y," did the clip go <em>inside</em> the recipe's instructions, or around the
+    whole recipe? Your friend will guess, and may guess wrong. So you add "hold on, these go together" exactly where the
+    listener would otherwise guess wrong. Those are <strong>parentheses</strong>.</p>
+  </div>
+  <p>This module builds the table (the tree data type) and the phone call (the printer). The printer's job is subtle: say
+  "these go together" <em>only</em> when needed, but <em>every</em> time it's needed.</p>
+  <div class="callout accent"><div class="label">Where the analogy stops</div>
+  <p>Real recipe cards contain ingredients. A λ-term contains <em>only</em> cards: there is no flour, no number, no string. Even
+  "data" will be built out of cards (Phase 3). And the listener's guessing rules aren't arbitrary. They're the two fixed
+  conventions from <a href="../../prerequisites/p4_grammars_and_bnf.html#assoc-precedence">P4.3</a>.</p></div>
+</section>
+
+<section id="s02">
+  <h2><span class="num">02</span>What Happens, Step by Step</h2>
+  <ol class="steps">
+    <li>You build a term with constructor calls: <code>App(Lam("x", Var("x")), Var("y"))</code>. There's no parser yet.</li>
+    <li>Each constructor checks the name is a legal identifier (e.g. <code>x</code>, <code>f'</code>, <code>acc_2</code>) and returns a frozen-shape object tagged <code>var</code>, <code>lam</code> or <code>app</code>.</li>
+    <li>Nested calls produce a tree. Nothing is ever mutated. A new term is always a new tree, possibly sharing old subtrees.</li>
+    <li><code>print(t)</code> walks the tree top-down, carrying one bit of context, <code>trailing</code> ("does anything follow me?").</li>
+    <li>At each node it emits the node's text and adds parentheses in exactly three situations (section 04).</li>
+    <li>Alternative views, <code>printFull</code>, <code>show</code> and <code>renderTree</code>, print the same tree in other ways. Measurements (<code>size</code>, <code>depth</code>, <code>counts</code>) walk it with one case per node kind.</li>
+  </ol>
+</section>
+
+<section id="s03">
+  <h2><span class="num">03</span>The Map: What a Term Looks Like in Memory</h2>
+  <p>Here's <code>(λx. x) y</code>, "the identity recipe, clipped to y", in every view the engine offers. This is real output from <code>npm run demo</code>:</p>
+<pre><code>print     : <span class="o">(λx. x) y</span>
+printFull : <span class="o">((λx. x) y)</span>
+ASCII     : <span class="o">(\x. x) y</span>
+show      : <span class="o">App(Lam("x", Var("x")), Var("y"))</span>
+<span class="o">@
+├── λx
+│   └── x
+└── y</span></code></pre>
+  <p>And the <strong>S combinator</strong>, <code>λx. λy. λz. x z (y z)</code>, drawn as a tree. Colors show node kinds: <span style="color:var(--gold)">abstraction</span>, <span style="color:var(--purple)">application</span>, <span style="color:var(--cyan)">variable</span>.</p>
+  <div class="diagram">
+    <svg viewBox="0 0 600 310" width="600" role="img" aria-label="Tree of the S combinator">
+      <g stroke="#3a3a3f" stroke-width="2">
+        <line x1="300" y1="30" x2="300" y2="80"/><line x1="300" y1="80" x2="300" y2="130"/><line x1="300" y1="130" x2="300" y2="180"/>
+        <line x1="300" y1="180" x2="200" y2="230"/><line x1="300" y1="180" x2="400" y2="230"/>
+        <line x1="200" y1="230" x2="150" y2="280"/><line x1="200" y1="230" x2="250" y2="280"/>
+        <line x1="400" y1="230" x2="350" y2="280"/><line x1="400" y1="230" x2="450" y2="280"/>
+      </g>
+      <g font-family="JetBrains Mono, monospace" font-size="15" text-anchor="middle" dominant-baseline="central">
+        <g fill="#18181b" stroke="#d4a017" stroke-width="2"><rect x="270" y="16" width="60" height="28" rx="14"/><rect x="270" y="66" width="60" height="28" rx="14"/><rect x="270" y="116" width="60" height="28" rx="14"/></g>
+        <g fill="#d4a017"><text x="300" y="30">λx</text><text x="300" y="80">λy</text><text x="300" y="130">λz</text></g>
+        <g fill="#18181b" stroke="#a78bfa" stroke-width="2"><circle cx="300" cy="180" r="16"/><circle cx="200" cy="230" r="16"/><circle cx="400" cy="230" r="16"/></g>
+        <g fill="#a78bfa"><text x="300" y="180">@</text><text x="200" y="230">@</text><text x="400" y="230">@</text></g>
+        <g fill="#18181b" stroke="#82aaff" stroke-width="2"><circle cx="150" cy="280" r="15"/><circle cx="250" cy="280" r="15"/><circle cx="350" cy="280" r="15"/><circle cx="450" cy="280" r="15"/></g>
+        <g fill="#82aaff"><text x="150" y="280">x</text><text x="250" y="280">z</text><text x="350" y="280">y</text><text x="450" y="280">z</text></g>
+      </g>
+      <g font-family="Inter, sans-serif" font-size="12" fill="#9a9992"><text x="215" y="208">fn</text><text x="372" y="208">arg</text><text x="340" y="80">body</text></g>
+    </svg>
+    <div class="caption">S has 10 nodes (3 λ, 3 @, 4 variables) and depth 6. The demo prints <code>size=10 depth=6 counts={"vars":4,"lams":3,"apps":3}</code>.</div>
+  </div>
+  <div class="table-wrap"><table class="map-table">
+    <tr><th>Kind</th><th>Fields</th><th>Children</th><th>Example</th></tr>
+    <tr><td><code>var</code></td><td><code>name</code></td><td>0</td><td><code>{ kind: "var", name: "x" }</code></td></tr>
+    <tr><td><code>lam</code></td><td><code>param</code>, <code>body</code></td><td>1</td><td><code>{ kind: "lam", param: "x", body: … }</code></td></tr>
+    <tr><td><code>app</code></td><td><code>fn</code>, <code>arg</code></td><td>2</td><td><code>{ kind: "app", fn: …, arg: … }</code></td></tr>
+  </table></div>
+  <a class="lab-link" data-lab="01" data-ex="S">Load S in the Lab</a><span class="lab-note"></span>
+</section>
+
+<section id="s04">
+  <h2><span class="num">04</span>The Code, Explained</h2>
+  <h3>The whole language in one type</h3>
+  <p class="file-label">src/term.ts</p>
+<pre><code><span class="k">export type</span> Term =
+  | { <span class="k">readonly</span> kind: <span class="s">"var"</span>; <span class="k">readonly</span> name: string }
+  | { <span class="k">readonly</span> kind: <span class="s">"lam"</span>; <span class="k">readonly</span> param: string; <span class="k">readonly</span> body: Term }
+  | { <span class="k">readonly</span> kind: <span class="s">"app"</span>; <span class="k">readonly</span> fn: Term; <span class="k">readonly</span> arg: Term };</code></pre>
+  <p>Three lines, one per grammar production (<a href="../../prerequisites/p4_grammars_and_bnf.html#bnf">P4.1</a>). The type is
+  <em>recursive</em>: <code>body</code>, <code>fn</code> and <code>arg</code> are themselves <code>Term</code>s. That's what makes it a tree. Every
+  field is <code>readonly</code> because later modules share subtrees between old and new terms, which is only safe if nobody
+  edits a node.</p>
+
+  <h3>Every function has the same skeleton</h3>
+  <p class="file-label">src/term.ts</p>
+<pre><code><span class="k">export function</span> size(t: Term): number {
+  <span class="k">switch</span> (t.kind) {
+    <span class="k">case</span> <span class="s">"var"</span>: <span class="k">return</span> 1;
+    <span class="k">case</span> <span class="s">"lam"</span>: <span class="k">return</span> 1 + size(t.body);
+    <span class="k">case</span> <span class="s">"app"</span>: <span class="k">return</span> 1 + size(t.fn) + size(t.arg);
+  }
+}</code></pre>
+  <p>One case per node kind, recursing into the children. You'll write this skeleton roughly a hundred times in this course:
+  for free variables, substitution, reduction, type checking, compiling. Get comfortable with it now.</p>
+
+  <h3>The printer: three rules and one bit of context</h3>
+  <p class="file-label">src/print.ts</p>
+<pre><code><span class="k">function</span> go(t: Term, trailing: boolean): string {
+  <span class="k">switch</span> (t.kind) {
+    <span class="k">case</span> <span class="s">"var"</span>:
+      <span class="k">return</span> t.name;
+    <span class="k">case</span> <span class="s">"lam"</span>: {
+      <span class="k">const</span> s = `${L}${t.param}. ${go(t.body, <span class="k">true</span>)}`;
+      <span class="k">return</span> trailing ? s : `(${s})`;
+    }
+    <span class="k">case</span> <span class="s">"app"</span>: {
+      <span class="k">const</span> fn = go(t.fn, <span class="k">false</span>);
+      <span class="k">const</span> arg = t.arg.kind === <span class="s">"app"</span> ? `(${go(t.arg, <span class="k">true</span>)})` : go(t.arg, trailing);
+      <span class="k">return</span> `${fn} ${arg}`;
+    }
+  }
+}</code></pre>
+  <p>Read it against the three required-parenthesis situations:</p>
+  <div class="table-wrap"><table class="data">
+    <tr><th>Situation</th><th>Where in the code</th><th>Without the parens you'd get…</th></tr>
+    <tr><td>A λ in function position</td><td><code>go(t.fn, false)</code> → the λ case sees <code>trailing=false</code></td><td><code>λx. x y</code>: the body swallows <code>y</code></td></tr>
+    <tr><td>An application in argument position</td><td><code>t.arg.kind === "app" ? `(…)`</code></td><td><code>f a b</code>: regrouped as <code>(f a) b</code></td></tr>
+    <tr><td>A λ argument with something after it</td><td><code>go(t.arg, trailing)</code> passes the context down</td><td><code>f λx. x g</code>: the λ swallows <code>g</code></td></tr>
+  </table></div>
+  <p>Why does a λ's <em>body</em> get <code>trailing = true</code>? Because by the second convention a body runs to the end of whatever
+  contains the λ, so nothing can follow it <em>inside</em> the λ.</p>
+  <div class="bullets"><div class="label">BULLET POINTS</div><ul>
+    <li>The tree is the truth. Text is a lossy transport format that needs parentheses to survive the trip.</li>
+    <li>Parentheses are needed in exactly three situations, all derived from two textbook conventions.</li>
+    <li>One of them can't be decided by looking at a node alone. It depends on what comes <em>after</em> it.</li>
+  </ul></div>
+</section>
+
+<section id="s05">
+  <h2><span class="num">05</span>Limits: What You Cannot Do Yet</h2>
+  <div class="compare">
+    <div class="cant"><h4>Can't do yet</h4><ul>
+      <li>Read text. <code>"λx. x"</code> can't become a tree until Module 3.</li>
+      <li>Prove the printer is unambiguous. That needs <code>parse(print(t)) = t</code> (Module 3).</li>
+      <li>Tell that <code>λx. x</code> and <code>λy. y</code> are the same function. <code>equalSyntax</code> says no (Module 4 fixes this).</li>
+      <li>Compute anything. There's no reduction until Module 8.</li>
+    </ul></div>
+    <div class="can"><h4>Can do now</h4><ul>
+      <li>Represent <em>every</em> λ-term as a tree.</li>
+      <li>Print any tree in textbook notation, fully-parenthesized form, ASCII, constructor form, or as a drawn tree.</li>
+      <li>Measure size, depth and node-kind counts.</li>
+      <li>Generate reproducible random terms for property tests.</li>
+    </ul></div>
+  </div>
+</section>
+
+<section id="s06">
+  <h2><span class="num">06</span>Run It</h2>
+  <div class="run-box"><h4>Run the tests</h4>
+  <pre><code>cd alonzo/track1-engine/01_term_ast
+npm test</code></pre>
+  <div class="desc">The last lines of the actual output:</div>
+<pre><code><span class="o">1..13
+# tests 13
+# suites 0
+# pass 13
+# fail 0</span></code></pre>
+  <div class="desc">Then the demo:</div>
+  <pre><code>npm run demo</code></pre>
+  <div class="desc">Actual output (the header lines npm prints first are omitted):</div>
+<pre><code><span class="o">== The classic terms ==
+I  = λx. x
+K  = λx. λy. x
+S  = λx. λy. λz. x z (y z)
+ω  = λx. x x
+Ω  = (λx. x x) λx. x x
+…
+== Parenthesization rules ==
+f a b                  ((f a) b)                      app is left-assoc
+f (a b)                (f (a b))                      right-nested app needs parens
+λx. x y                (λx. (x y))                    λ body extends right
+(λx. x) y              ((λx. x) y)                    λ applied needs parens
+f λx. x                (f (λx. x))                    trailing λ arg: no parens
+f (λx. x) g            ((f (λx. x)) g)                λ arg followed by more
+f (g λx. x)            (f (g (λx. x)))                λ arg inside right-nested app
+(λx. x x) λx. x x      ((λx. (x x)) (λx. (x x)))      Ω
+
+== P5.2 check: vars = apps + 1 on 2000 random terms ==
+2000/2000 terms satisfy the property</span></code></pre></div>
+  <div class="callout red"><div class="label">Getting a blank or broken result?</div>
+  <ul>
+    <li><code>bad option: --experimental-strip-types</code>: your Node is older than 22.6. Check with <code>node --version</code> and upgrade.</li>
+    <li><code>npm error enoent Could not read package.json</code>: you're not inside <code>01_term_ast/</code>. <code>npm test</code> reads that folder's <code>package.json</code>. <code>cd</code> into it first.</li>
+    <li><code>λ</code> shows as <code>Î»</code> or <code>?</code>: your Windows console isn't in UTF-8. Run <code>chcp 65001</code> first, or use Windows Terminal. The ASCII view (<code>print(t, { lambda: "\\" })</code>) avoids the issue.</li>
+    <li>An <code>ExperimentalWarning: Type Stripping…</code> line appears: you ran <code>node</code> by hand without <code>--no-warnings</code>. It's harmless (<a href="../../prerequisites/p8_reading_typescript.html#running">P8.3</a>).</li>
+  </ul></div>
+  <p>Then open the Lab to build terms by clicking. It runs this exact <code>src/</code> folder:</p>
+  <a class="lab-link" data-lab="01">Open Lab 01: Term Builder</a><span class="lab-note"></span>
+</section>
+
+<section id="s07">
+  <h2><span class="num">07</span>Brain Exercise</h2>
+  <div class="brain"><div class="label">Think before you reveal</div>
+  <p>Most of the printer decides parentheses by looking at a node and its immediate parent. But the λ case takes an extra
+  argument, <code>trailing</code>, which comes from further away.</p>
+  <p><strong>Find two terms that contain the <em>identical</em> λ subtree, such that the correct printout needs parentheses around
+  it in one term and none in the other, even though its parent node is the same kind (an application) in both.</strong>
+  What does that tell you about whether a "local" printer (one that only looks at a node and its parent's kind) could ever be correct?</p>
+  <p>Then test your answer: in the Lab, build each term and use <em>Pin as A</em> / <em>Pin as B</em>. The checker verifies it.</p>
+  <a class="lab-link" data-lab="01">Check it in the Lab</a>
+  <details><summary>Reveal the answer</summary>
+  <p>Take <code>λx. x</code> as the argument of an application in both terms:</p>
+  <ul>
+    <li><code>App(Var f, Lam x x)</code> prints <code>f λx. x</code>. The λ is last, so its body can't swallow anything.</li>
+    <li><code>App(App(Var f, Lam x x), Var g)</code> prints <code>f (λx. x) g</code>. The inner application is the <em>function part</em> of an outer one, so <code>g</code> follows it.</li>
+  </ul>
+  <p>In both, the λ's parent is an application and the λ is that parent's argument. The difference is two levels up:
+  whether the parent is itself followed by something. So no local rule can decide it. Information must flow
+  <em>down</em> the recursion, and that's the <code>trailing</code> flag. Compiler writers call such a flag an <em>inherited attribute</em>:
+  a value passed from parent to child during a tree walk. You'll see many more of them, such as the binding environments in
+  Module 19 and the typing contexts in Module 24.</p></details></div>
+</section>
+
+<section id="s08">
+  <h2><span class="num">08</span>There Are No Dumb Questions</h2>
+  <div class="qa">
+    <p class="q">Why not just store terms as strings, like <code>"λx. x y"</code>?</p>
+    <p class="a">Because every operation you'll write (renaming, substitution, reduction, typing) asks structural questions: "what's the body of this λ?" "what's the argument?" On a string you'd re-parse every time, and you'd constantly be one bracket away from a bug. Trees answer structural questions in O(1).</p>
+    <p class="q">Where are the numbers? How do I write <code>2 + 3</code>?</p>
+    <p class="a">You can't, yet, and in the <em>pure</em> λ-calculus you never get built-in numbers. Numbers become particular functions (Church numerals, Module 14). That's the λ-calculus's most surprising claim: functions alone are enough.</p>
+    <p class="q"><code>equalSyntax(λx. x, λy. y)</code> says <code>false</code>. Isn't that wrong?</p>
+    <p class="a">For the λ-calculus, yes. They're the same function (<a href="../../prerequisites/p2_variables_binding_scope.html#names-dont-matter">P2.5</a>). <code>equalSyntax</code> answers a narrower question: "are these literally the same tree, names included?" Module 4 adds α-equivalence for the real question. Keeping both makes the difference explicit.</p>
+    <p class="q">Books write Ω as <code>(λx. x x)(λx. x x)</code>. Why does ours drop the second pair?</p>
+    <p class="a">Because it's the last thing in the term, nothing follows the second λ that it could swallow. Both spellings denote the same tree. Ours is the minimal one. Minimal output is a <em>convention</em> we chose (see DECISIONS.md, category (c)) to make the rules visible.</p>
+    <p class="q">Why does a λ have only one parameter? I want <code>λx y. …</code>.</p>
+    <p class="a">By definition every λ binds exactly one variable, and multi-argument functions are curried (<a href="../../prerequisites/p1_functions_as_mappings.html#currying">P1.4</a>). <code>λx y. M</code> is only shorthand for <code>λx. λy. M</code>. The helper <code>lams(["x","y"], M)</code> builds that nesting, and Module 3's parser will accept the shorthand.</p>
+  </div>
+</section>
+
+<section id="s09">
+  <h2><span class="num">09</span>What's Next</h2>
+  <p>You can hold a term and print it, but you still have to type <code>App(Lam("x", Var("x")), Var("y"))</code> to get one. Humans want to
+  type <code>(\x. x) y</code>. Getting from characters to a tree takes two steps, and <strong>Module 2</strong> builds the first:
+  a <strong>lexer</strong> that chops raw text into tokens (<code>λ</code>, identifiers, <code>.</code>, parentheses), remembers
+  where each came from, and reports a precise, located error on bad input instead of crashing. Module 3 then assembles the tokens into
+  this module's trees, and finally proves the printer is unambiguous.</p>
+</section>
+
+<div class="module-nav">
+  <a href="../../prerequisites.html"><span class="dir">← Before this</span>Prerequisites</a>
+  <a class="next" href="../02_lexer/tutorial.html"><span class="dir">Next →</span>Module 2: Lexer</a>
+</div>
+</main>
+<footer>Alonzo · Track 1 · Module 1 · <a href="DECISIONS.md">DECISIONS.md</a> · <a href="../../GLOSSARY.md">Glossary</a></footer>
+<script src="../../shared/course.js"></script>
+</body>
+</html>

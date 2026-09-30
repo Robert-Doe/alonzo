@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Concept: Context</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700;800&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../shared/course.css">
+</head>
+<body>
+<nav class="topbar"><a class="brand" href="../../index.html">λ <span>Alonzo</span></a><a href="concept_how_they_connect.html">Vocabulary hub</a><a href="tutorial.html">Module 8 tutorial</a><span class="spacer"></span><span class="muted">Vocabulary web · 3 of 4</span></nav>
+<header class="hero">
+  <div class="badge">CONCEPT</div>
+  <h1>Context</h1>
+  <p class="tagline">The whole term with a hole where the redex sits. It records where the step happens.</p>
+</header>
+<main class="container">
+<section>
+  <h2>In one sentence</h2>
+  <p>A <strong>context</strong> <code>C[□]</code> is a term with exactly one hole. <code>C[R]</code> fills the hole with R. Every one-step reduction has the form <code>C[R] → C[R']</code>.</p>
+  <div class="analogy"><div class="big">The context is the pile of papers with one envelope-shaped gap.</div><p>Lift the envelope out, open it, and put the result back in the same gap. The rest of the pile never changes.</p></div>
+</section>
+<section>
+  <h2>See it</h2>
+  <pre><code><span class="o">λx. [(λy. y) x] z
+  context    C[□] = λx. □ z
+  rules used      : ξ ∘ app-L ∘ β</span></code></pre><p>In the engine, a context is data with one constructor per congruence rule (<code>appL</code>, <code>appR</code>, <code>lam</code> for ξ), so its shape <em>is</em> the chain of inference rules the step uses.</p>
+</section>
+<section>
+  <h2>Common mix-up</h2>
+  <div class="callout red"><div class="label">Wrong</div><p>"Filling a context's hole is substitution, so it must avoid capture."</p></div>
+  <div class="callout green"><div class="label">Right</div><p>Plugging is deliberately <em>not</em> capture-avoiding. Filling <code>λx. □</code> with <code>x</code> gives <code>λx. x</code>, because a redex under a λ must see that λ's variable. Substitution replaces free <em>variables</em>; plugging fills a <em>hole</em>.</p></div>
+</section>
+<section>
+  <div class="callout accent"><div class="label">How this connects to the other terms</div><p>The context surrounds the <a href="concept_redex.html">redex</a>. Swapping the redex for its <a href="concept_contractum.html">contractum</a> inside the same context produces the <a href="concept_reduct.html">reduct</a>.</p></div>
+  <p>Siblings: <a href="concept_redex.html">Redex</a> · <a href="concept_contractum.html">Contractum</a> · <a href="concept_reduct.html">Reduct</a></p>
+  <p><a href="concept_how_they_connect.html">→ See all 4 terms side by side</a></p>
+</section>
+</main>
+<footer>Alonzo · Module 8 vocabulary web</footer>
+</body>
+</html>

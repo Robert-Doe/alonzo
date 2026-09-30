@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Variables, Binding & Scope</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700;800&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../shared/course.css">
+</head>
+<body style="--accent:#d4a017;--accent-rgb:245,200,66">
+<nav class="topbar"><a class="brand" href="../index.html">λ <span>Alonzo</span></a><a href="../prerequisites.html">← All prerequisites</a><span class="spacer"></span><span class="muted">P2 of 8</span></nav>
+<header class="hero">
+  <div class="badge">PREREQUISITE P2</div>
+  <h1>Variables, <span>Binding</span> &amp; Scope</h1>
+  <p class="tagline">Almost every bug in a λ-calculus implementation is a bug about <em>which</em> <code>x</code> an <code>x</code> refers to. This page gives you the words to talk about that precisely.</p>
+</header>
+<main class="container">
+
+<section id="binder">
+  <h2><span class="num">P2.1</span>A binder introduces a name</h2>
+  <p>In <code>λx. x y</code>, the <code>λx</code> part is a <strong>binder</strong>: it introduces the name <code>x</code>.
+  The part after the dot, <code>x y</code>, is its <strong>body</strong>, which is also the binder's <strong>scope</strong>:
+  the region of text where that name means "this λ's parameter."</p>
+  <div class="analogy"><div class="big">A binder is a name tag handed out at the door of a room.</div>
+  <p>Inside the room (the body), anyone saying "x" means the guest wearing the <code>x</code> tag. Outside the room, that tag
+  means nothing. Another room can hand out its own <code>x</code> tag to a completely different guest.</p></div>
+</section>
+
+<section id="free-bound">
+  <h2><span class="num">P2.2</span>Bound vs free occurrences</h2>
+  <p>Each <em>occurrence</em> (each place a variable is used) is one of two kinds:</p>
+  <ul>
+    <li><strong>Bound</strong>: it sits inside the scope of a binder with the same name. In <code>λx. x y</code>, the <code>x</code> in the body is bound.</li>
+    <li><strong>Free</strong>: no enclosing binder has its name. In <code>λx. x y</code>, <code>y</code> is free. Its meaning comes from <em>outside</em> the term.</li>
+  </ul>
+  <p>Free-ness is <strong>relative to a term</strong>. In <code>x y</code> alone, <code>x</code> is free. Wrap it in <code>λx.</code> and the same occurrence becomes bound.</p>
+  <div class="pencil"><div class="label">Sharpen your pencil</div>
+  <p>In <code>(λx. x z) (λy. x y)</code>, mark each variable occurrence as free or bound.</p>
+  <p><em>Answer: the first <code>x</code> is bound (by the first λ). <code>z</code> is free. In the second function, <code>y</code> is bound, but that
+  <code>x</code> is <strong>free</strong>: the first λ's scope ended at its closing parenthesis.</em></p></div>
+</section>
+
+<section id="shadowing">
+  <h2><span class="num">P2.3</span>Shadowing: the innermost binder wins</h2>
+  <p>In <code>λx. λx. x</code>, which binder does the final <code>x</code> belong to? The <strong>nearest enclosing</strong> one, the inner λ.
+  The outer <code>x</code> is <em>shadowed</em>: still there, but unreachable by that name inside the inner scope. This is exactly
+  how nested functions in JavaScript, Python and C behave.</p>
+</section>
+
+<section id="lexical">
+  <h2><span class="num">P2.4</span>Lexical (static) scope</h2>
+  <p>"Which binder does this name refer to?" is answered by looking at the <strong>text</strong>, the nesting of the program
+  as written. It is never answered by what happens at runtime. That is <strong>lexical scope</strong>, and the λ-calculus
+  has it by definition. Early LISP (1960) used <em>dynamic</em> scope instead and got some programs wrong. You'll rebuild that
+  bug in Track H5 and fix it with closures from Module 19.</p>
+</section>
+
+<section id="names-dont-matter">
+  <h2><span class="num">P2.5</span>Bound names don't matter</h2>
+  <p><code>λx. x</code> and <code>λy. y</code> are the same function: both return their argument. Renaming a binder together with
+  all the occurrences it binds changes nothing. This is called <strong>α-conversion</strong> (Module 4). Free names <em>do</em>
+  matter: <code>λx. y</code> and <code>λx. z</code> are different, because they refer to different things outside.</p>
+  <div class="callout red"><div class="label">Watch it!</div>
+  <p>Renaming must not <em>capture</em>. Rename the binder of <code>λx. y</code> to <code>y</code> and you get <code>λy. y</code>, the identity
+  function. The free <code>y</code> got grabbed by the new binder. Avoiding this is the whole job of Module 5.</p></div>
+</section>
+
+<section id="in-this-course">
+  <h2><span class="num">P2.6</span>Where this shows up</h2>
+  <ul>
+    <li><strong>Module 1</strong>: the abstraction node stores the binder's name.</li>
+    <li><strong>Module 4</strong>: computes the free variables and decides α-equivalence.</li>
+    <li><strong>Module 5</strong>: substitution that never captures.</li>
+    <li><strong>Module 6</strong>: de Bruijn indices, which replace names with "how many binders out."</li>
+    <li><strong>Module 19, C7</strong>: environments and closures, which are scope made concrete at runtime.</li>
+  </ul>
+</section>
+<div class="module-nav"><a href="p1_functions_as_mappings.html"><span class="dir">← Previous</span>P1 Functions as Mappings</a><a class="next" href="p3_trees_and_recursion.html"><span class="dir">Next →</span>P3 Trees &amp; Recursion</a></div>
+</main>
+<footer>Alonzo · Prerequisite P2</footer>
+</body>
+</html>

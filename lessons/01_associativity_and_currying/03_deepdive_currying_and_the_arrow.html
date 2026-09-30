@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Currying and the Arrow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700;800&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../shared/course.css">
+</head>
+<body>
+<nav class="topbar"><a class="brand" href="../../index.html">λ <span>Alonzo</span></a><a href="01_explainer.html">Explainer</a><a href="02_deepdive_left_vs_right_in_parsers.html">Deep dive 1</a><a href="04_deepdive_real_languages_and_bugs.html">Deep dive 3</a><span class="spacer"></span><span class="muted">Lesson cluster 01 · deep dive 2</span></nav>
+<header class="hero">
+  <div class="badge">DEEP DIVE</div>
+  <h1>Currying and <span>the Arrow</span></h1>
+  <p class="tagline">Application groups left, function types group right. They aren't two separate conventions: they're one convention seen from the value side and from the type side.</p>
+</header>
+<main class="container">
+
+<section>
+  <h2>Follow the types of <code>f a b</code></h2>
+  <p>Let <code>f : A → B → C</code>. Under right-associativity that's <code>A → (B → C)</code>: f takes an A and returns a <em>function</em> <code>B → C</code>.</p>
+<pre><code>f          : A → (B → C)
+f a        : B → C          <span class="c">← peel one arrow from the LEFT of the type…</span>
+(f a) b    : C              <span class="c">← …by applying on the LEFT of the term</span></code></pre>
+  <p>Each application removes the <em>leftmost</em> argument type. For that to line up with no parentheses, application must group left (<code>(f a) b</code>) while the arrow groups right (<code>A → (B → C)</code>).
+  Flip either one and every curried call needs parentheses.</p>
+</section>
+
+<section>
+  <h2>Schönfinkel's trick, in types</h2>
+  <p>A two-argument function <code>(A × B) → C</code> and its curried form <code>A → (B → C)</code> carry the same information. That's the isomorphism behind currying, published by Schönfinkel in 1924 (rebuilt in
+  Track H1) and later named after Haskell Curry. The λ-calculus takes the curried side as primitive: every λ takes one argument, and <code>λx y. M</code> is shorthand.</p>
+  <p>Module 13's pairs close the loop. You <em>can</em> write the uncurried version as <code>λp. M[x := fst p, y := snd p]</code>, a function of a single pair. Converting between the two is <code>curry = λf a b. f (pair a b)</code> and
+  <code>uncurry = λf p. f (fst p) (snd p)</code>.</p>
+</section>
+
+<section>
+  <h2>Where you'll meet the arrow</h2>
+  <ul>
+    <li><strong>Module 24 (STLC):</strong> types <code>τ ::= base | τ → τ</code>, with <code>→</code> right-associative, and the typing rule for application peeling the left arrow.</li>
+    <li><strong>Module 26 (Hindley–Milner):</strong> inferred types like <code>K : α → β → α</code>, printed with minimal parentheses by the same "only where the convention would regroup" logic as Module 1's printer.</li>
+    <li><strong>Module 27 (Curry–Howard):</strong> <code>A → B → C</code> read as the proposition "A implies (B implies C)". Implication is right-associative in logic for exactly the same reason.</li>
+  </ul>
+  <div class="callout accent"><div class="label">How this connects</div><p>Associativity isn't cosmetics. It's the syntactic shadow of "functions take one argument". Pick the directions consistently (application left, arrow right, λ right) and curried code needs no parentheses.</p></div>
+</section>
+<div class="module-nav"><a href="02_deepdive_left_vs_right_in_parsers.html"><span class="dir">← Previous</span>Left vs right in parsers</a><a class="next" href="04_deepdive_real_languages_and_bugs.html"><span class="dir">Next →</span>Real languages and bugs</a></div>
+</main>
+<footer>Alonzo · Lesson cluster 01 · deep dive 2</footer>
+</body>
+</html>

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Concept: βη-Normal Form</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700;800&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../shared/course.css">
+</head>
+<body>
+<nav class="topbar"><a class="brand" href="../../index.html">λ <span>Alonzo</span></a><a href="concept_how_they_connect.html">Vocabulary hub</a><a href="tutorial.html">Module 11 tutorial</a><span class="spacer"></span><span class="muted">Vocabulary web · 1 of 5</span></nav>
+<header class="hero">
+  <div class="badge">CONCEPT</div>
+  <h1>βη-normal form</h1>
+  <p class="tagline">No β-redex and no η-redex anywhere. The strictest notion of finished.</p>
+</header>
+<main class="container">
+<section>
+  <h2>In one sentence</h2>
+  <p>A term is in <strong>βη-normal form</strong> when it contains neither <code>(λx. M) N</code> nor <code>λx. M x</code> (x ∉ FV(M)) anywhere, even under λ.</p>
+  <div class="analogy"><div class="big">A fully simplified fraction: nothing cancels and nothing can be rewritten shorter.</div><p>Not even a forwarding wrapper is left.</p></div>
+</section>
+<section>
+  <h2>See it</h2>
+  <pre><code><span class="o">f                               ✓     ✓    ✓     ✓    ✓
+λx. f x                         ·     ✓    ✓     ✓    ✓</span></code></pre><p class="muted">Real demo output (columns: βη-NF, β-NF, HNF, WHNF, value). <code>λx. f x</code> is β-normal but not βη-normal: it's an η-redex.</p>
+</section>
+<section>
+  <h2>Common mix-up</h2>
+  <div class="callout red"><div class="label">Wrong</div><p>"β-normal and βη-normal are the same thing."</p></div>
+  <div class="callout green"><div class="label">Right</div><p>They differ exactly by η. <code>λx. f x</code> is β-normal, and η-reduces to <code>f</code>. βη-NF is where two extensionally equal functions become syntactically equal.</p></div>
+</section>
+<section>
+  <div class="callout accent"><div class="label">How this connects to the other terms</div><p>Every βη-normal form is a <a href="concept_beta_normal_form.html">β-normal form</a>, which is a <a href="concept_head_normal_form.html">head normal form</a>, which is a <a href="concept_weak_head_normal_form.html">WHNF</a>.</p></div>
+  <p>Siblings: <a href="concept_beta_normal_form.html">β-normal form</a> · <a href="concept_head_normal_form.html">Head normal form</a> · <a href="concept_weak_head_normal_form.html">Weak head normal form</a> · <a href="concept_value.html">Value</a></p>
+  <p><a href="concept_how_they_connect.html">→ See all 5 terms side by side</a></p>
+</section>
+</main>
+<footer>Alonzo · Module 11 vocabulary web</footer>
+</body>
+</html>

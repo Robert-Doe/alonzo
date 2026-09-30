@@ -1,0 +1,10 @@
+-- examples.lam — run with: npm run repl -- examples.lam
+S K K a
+S K K
+B f g x
+C K a b
+twice twice f x
+:expand twice twice
+thrice = λf x. f (f (f x))
+thrice twice f x
+fact = λn. fact n

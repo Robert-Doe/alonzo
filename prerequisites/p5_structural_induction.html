@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Structural Induction</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700;800&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../shared/course.css">
+</head>
+<body style="--accent:#d4a017;--accent-rgb:245,200,66">
+<nav class="topbar"><a class="brand" href="../index.html">λ <span>Alonzo</span></a><a href="../prerequisites.html">← All prerequisites</a><span class="spacer"></span><span class="muted">P5 of 8</span></nav>
+<header class="hero">
+  <div class="badge">PREREQUISITE P5</div>
+  <h1>Structural <span>Induction</span></h1>
+  <p class="tagline">How to be sure a claim holds for <em>every</em> λ-term, when there are infinitely many of them.</p>
+</header>
+<main class="container">
+
+<section id="dominoes">
+  <h2><span class="num">P5.1</span>From dominoes to trees</h2>
+  <p>Ordinary induction on numbers: prove the claim for 0, and prove "if it holds for n, it holds for n+1." Then it holds for
+  all n. Dominoes: knock the first, and each knocks the next.</p>
+  <p><strong>Structural induction</strong> does the same for trees. Instead of "0" and "n+1," you have one case per node kind:</p>
+  <ul>
+    <li><strong>Variable</strong> (a leaf): prove the claim directly.</li>
+    <li><strong>Abstraction</strong> <code>λx. M</code>: <em>assume</em> it holds for <code>M</code> (the induction hypothesis) and prove it for <code>λx. M</code>.</li>
+    <li><strong>Application</strong> <code>M N</code>: assume it holds for <code>M</code> <em>and</em> <code>N</code>, and prove it for <code>M N</code>.</li>
+  </ul>
+  <div class="analogy"><div class="big">It's the manager-delegation picture from P3, turned into a guarantee.</div>
+  <p>If every leaf answers correctly, and every manager answers correctly <em>whenever their reports did</em>, then the CEO's
+  answer is correct. No one ever checked the whole company at once.</p></div>
+</section>
+
+<section id="example">
+  <h2><span class="num">P5.2</span>A worked example</h2>
+  <p><strong>Claim:</strong> in every term, the number of variable occurrences is exactly one more than the number of applications.</p>
+  <ul>
+    <li><strong>Variable</strong> <code>x</code>: 1 variable, 0 applications. 1 = 0 + 1. ✓</li>
+    <li><strong>Abstraction</strong> <code>λx. M</code>: the binder is not an occurrence, so the counts equal <code>M</code>'s. By hypothesis, vars(M) = apps(M) + 1. ✓</li>
+    <li><strong>Application</strong> <code>M N</code>: vars = vars(M) + vars(N) = (apps(M)+1) + (apps(N)+1) = (apps(M)+apps(N)+1) + 1 = apps(M N) + 1. ✓</li>
+  </ul>
+  <p>Done, for all infinitely many terms. Module 1's test suite checks this exact property on generated terms: code checking the math.</p>
+</section>
+
+<section id="proof-is-program">
+  <h2><span class="num">P5.3</span>A proof by structural induction looks like a recursive function</h2>
+  <p>Compare the proof above to <code>size</code> in <a href="p3_trees_and_recursion.html#recursion-on-trees">P3.3</a>. Same three cases,
+  same "use the answer for the children." That resemblance is not an accident. In Module 27 (Curry–Howard) and Module 31
+  (a mini proof assistant) you'll see that an induction proof literally <em>is</em> a recursive function.</p>
+</section>
+
+<section id="in-this-course">
+  <h2><span class="num">P5.4</span>Where this shows up</h2>
+  <ul>
+    <li><strong>Module 4</strong>: free variables are defined by structural recursion, and their properties hold by structural induction.</li>
+    <li><strong>Module 5</strong>: "substitution never captures" is argued case by case.</li>
+    <li><strong>Module 25</strong>: why well-typed terms terminate. The proof (Tait's) is a clever strengthened induction.</li>
+    <li><strong>Module 31</strong>: you'll write induction proofs that a machine checks.</li>
+  </ul>
+</section>
+<div class="module-nav"><a href="p4_grammars_and_bnf.html"><span class="dir">← Previous</span>P4 Grammars &amp; BNF</a><a class="next" href="p6_rewriting_systems.html"><span class="dir">Next →</span>P6 Rewriting Systems</a></div>
+</main>
+<footer>Alonzo · Prerequisite P5</footer>
+</body>
+</html>

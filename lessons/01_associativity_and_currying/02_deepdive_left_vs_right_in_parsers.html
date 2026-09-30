@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Left vs Right in Parsers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700;800&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../shared/course.css">
+</head>
+<body>
+<nav class="topbar"><a class="brand" href="../../index.html">λ <span>Alonzo</span></a><a href="01_explainer.html">Explainer</a><a href="03_deepdive_currying_and_the_arrow.html">Deep dive 2</a><a href="04_deepdive_real_languages_and_bugs.html">Deep dive 3</a><span class="spacer"></span><span class="muted">Lesson cluster 01 · deep dive 1</span></nav>
+<header class="hero">
+  <div class="badge">DEEP DIVE</div>
+  <h1>Left vs Right <span>in Parsers</span></h1>
+  <p class="tagline">Right-associativity falls out of recursion for free. Left-associativity fights recursive descent, and the fix is the same loop Module 3 uses.</p>
+</header>
+<main class="container">
+
+<section>
+  <h2>The grammar that says it directly</h2>
+<pre><code>left:   E ::= E "-" T | T        (a - b - c = (a - b) - c)
+right:  E ::= T "^" E | T        (a ^ b ^ c = a ^ (b ^ c))</code></pre>
+  <p>Each rule puts the recursion on the side the operator groups toward. That's the textbook way to <em>describe</em> associativity with a grammar (<a href="../../prerequisites/p4_grammars_and_bnf.html#assoc-precedence">P4.3</a>).</p>
+</section>
+
+<section>
+  <h2>Right: recursion does it for you</h2>
+<pre><code><span class="k">function</span> parsePow() {
+  <span class="k">const</span> left = parseAtom();
+  <span class="k">if</span> (peek() === <span class="s">"^"</span>) { next(); <span class="k">return</span> Pow(left, parsePow()); }   <span class="c">// recurse on the RIGHT</span>
+  <span class="k">return</span> left;
+}</code></pre>
+  <p>The recursive call handles "everything to the right", so <code>a ^ b ^ c</code> becomes <code>Pow(a, Pow(b, c))</code>. The λ-body rule works exactly like this: <code>parseLambda</code> calls <code>parseTerm</code> for the whole body, so bodies extend right.</p>
+</section>
+
+<section>
+  <h2>Left: recursion would loop forever</h2>
+  <p>Transcribe <code>E ::= E "-" T</code> literally and <code>parseE</code>'s first action is to call <code>parseE</code>, before consuming any token. That's infinite recursion. It's the <em>left-recursion</em> problem
+  from <a href="../../track1-engine/03_parser/tutorial.html#s04">Module 3</a>. The standard fix is to rewrite the rule as <em>repetition</em> and fold to the left:</p>
+<pre><code><span class="k">let</span> acc = parseT();
+<span class="k">while</span> (peek() === <span class="s">"-"</span>) { next(); acc = Sub(acc, parseT()); }    <span class="c">// ((a - b) - c)</span></code></pre>
+  <p>Module 3's application loop is the same shape with no operator token: two items next to each other <em>are</em> the operator.</p>
+</section>
+
+<section>
+  <h2>Folds name the direction</h2>
+  <div class="table-wrap"><table class="data">
+    <tr><th>Build</th><th>Fold</th><th>Engine example</th></tr>
+    <tr><td>left-leaning <code>((f a) b) c</code></td><td><code>reduce</code> (left fold)</td><td><code>apps(f, a, b, c)</code> in Module 1</td></tr>
+    <tr><td>right-leaning <code>λx. (λy. (λz. M))</code></td><td><code>reduceRight</code> (right fold)</td><td><code>lams(["x","y","z"], M)</code> in Module 1, <code>λx y z. M</code> in Module 3</td></tr>
+  </table></div>
+</section>
+
+<section>
+  <h2>Other parser families</h2>
+  <p><strong>LR parsers</strong> (yacc/Bison) handle left recursion natively and take associativity declarations like <code>%left '-'</code> and <code>%right '^'</code> to resolve shift/reduce conflicts.
+  <strong>Pratt parsers</strong> give each operator a binding power, and right-associativity is "recurse with one less". Both are covered in the sibling course <code>bob_compiler/a-finity/everything_parsing</code>.</p>
+  <div class="callout accent"><div class="label">How this connects</div><p>The λ-calculus needs just the two shapes above: a loop for application and a recursive call for bodies. Track 2's Alonzo-ML parser (C1) will need both, for real infix operators.</p></div>
+</section>
+<div class="module-nav"><a href="01_explainer.html"><span class="dir">← Back</span>Explainer</a><a class="next" href="03_deepdive_currying_and_the_arrow.html"><span class="dir">Next →</span>Currying and the arrow</a></div>
+</main>
+<footer>Alonzo · Lesson cluster 01 · deep dive 1</footer>
+</body>
+</html>

@@ -1,0 +1,135 @@
+{
+  "dir": "track1-engine/11_eta_normal_forms",
+  "module": 11,
+  "hub_title": "Normal Forms Vocabulary Hub",
+  "hub_h1": "βη-NF · β-NF · HNF · WHNF · <span>Value</span>",
+  "hub_tagline": "Five meanings of \"finished\". They nest inside each other, and each has a term that sits in it but not in the next.",
+  "concepts": [
+    {
+      "key": "beta_eta_normal_form",
+      "title": "Concept: βη-Normal Form",
+      "h1": "βη-normal form",
+      "tagline": "No β-redex and no η-redex anywhere. The strictest notion of finished.",
+      "sentence": "A term is in <strong>βη-normal form</strong> when it contains neither <code>(λx. M) N</code> nor <code>λx. M x</code> (x ∉ FV(M)) anywhere, even under λ.",
+      "analogy_big": "A fully simplified fraction: nothing cancels and nothing can be rewritten shorter.",
+      "analogy": "Not even a forwarding wrapper is left.",
+      "see": "<pre><code><span class=\"o\">f                               ✓     ✓    ✓     ✓    ✓\nλx. f x                         ·     ✓    ✓     ✓    ✓</span></code></pre><p class=\"muted\">Real demo output (columns: βη-NF, β-NF, HNF, WHNF, value). <code>λx. f x</code> is β-normal but not βη-normal: it's an η-redex.</p>",
+      "wrong": "\"β-normal and βη-normal are the same thing.\"",
+      "right": "They differ exactly by η. <code>λx. f x</code> is β-normal, and η-reduces to <code>f</code>. βη-NF is where two extensionally equal functions become syntactically equal.",
+      "connects": "Every βη-normal form is a <a href=\"concept_beta_normal_form.html\">β-normal form</a>, which is a <a href=\"concept_head_normal_form.html\">head normal form</a>, which is a <a href=\"concept_weak_head_normal_form.html\">WHNF</a>."
+    },
+    {
+      "key": "beta_normal_form",
+      "title": "Concept: β-Normal Form",
+      "h1": "β-normal form",
+      "tagline": "No β-redex anywhere, including under λ. What normal order produces.",
+      "sentence": "A term is in <strong>β-normal form</strong> when no sub-term has the shape <code>(λx. M) N</code>. It's what \"the normal form\" means by default.",
+      "analogy_big": "Every envelope in the pile has been opened, even the ones tucked inside folders.",
+      "analogy": "Whatever is left can't compute any further.",
+      "see": "<pre><code><span class=\"o\">x ((λa. a) b)                   ·     ·    ✓     ✓    ·</span></code></pre><p class=\"muted\">Head normal, but <em>not</em> β-normal: a redex remains inside the argument.</p>",
+      "wrong": "\"If a term's head is a variable, it's in normal form.\"",
+      "right": "That's <em>head</em> normal form. β-normal form also requires that the arguments (and everything under every λ) be redex-free.",
+      "connects": "Stricter: <a href=\"concept_beta_eta_normal_form.html\">βη-normal form</a>. Looser: <a href=\"concept_head_normal_form.html\">head normal form</a>. Unique when it exists, by Church–Rosser (Module 10)."
+    },
+    {
+      "key": "head_normal_form",
+      "title": "Concept: Head Normal Form",
+      "h1": "Head normal form",
+      "tagline": "λx1…xn. y M1 … Mk: a variable sits at the head. Arguments may still compute.",
+      "sentence": "A term is in <strong>head normal form (HNF)</strong> when, after its leading λs, its head is a <em>variable</em>. Nothing can ever change that outline, whatever happens in the arguments.",
+      "analogy_big": "The headline of a newspaper is printed. The articles below may still be edited.",
+      "analogy": "Whatever edits happen, the front page's headline is final.",
+      "see": "<pre><code><span class=\"o\">x ((λa. a) b)                   ·     ·    ✓     ✓    ·\nλx. (λy. y) x                   ·     ·    ·     ✓    ✓</span></code></pre><p class=\"muted\">The first is HNF (head <code>x</code>). The second is not: under its λ, the head is a redex.</p>",
+      "wrong": "\"HNF and WHNF differ only in the word 'weak'.\"",
+      "right": "HNF looks <em>under</em> the leading λs, and WHNF doesn't. <code>λx. (λy. y) x</code> is WHNF (it starts with λ) but not HNF (under that λ the head is a redex).",
+      "connects": "Between <a href=\"concept_beta_normal_form.html\">β-normal form</a> (stricter) and <a href=\"concept_weak_head_normal_form.html\">WHNF</a> (looser). Terms with no HNF (like <code>λx. Ω</code>) are called <em>unsolvable</em>, the λ-calculus's notion of \"meaningless\"."
+    },
+    {
+      "key": "weak_head_normal_form",
+      "title": "Concept: Weak Head Normal Form",
+      "h1": "Weak head normal form",
+      "tagline": "A λ, or a variable applied to arguments. Where lazy evaluation stops.",
+      "sentence": "A term is in <strong>weak head normal form (WHNF)</strong> when it is an abstraction <code>λx. M</code> (anything inside) or a neutral term <code>y M1 … Mk</code>.",
+      "analogy_big": "A wrapped present: you know it's a present, and you haven't opened it.",
+      "analogy": "Lazy languages stop here until someone actually needs what's inside.",
+      "see": "<pre><code><span class=\"o\">to WHNF (call-by-name)             λy. (λz. (λw. w) z) y        1 step(s)\nto HNF (head reduction)            λy. y                        3 step(s)</span></code></pre><p class=\"muted\">Real demo output: call-by-name stops as soon as the term is a λ.</p>",
+      "wrong": "\"A term in WHNF has finished computing.\"",
+      "right": "WHNF only fixes the <em>outer shape</em>. <code>λx. Ω</code> is in WHNF, yet running its body never finishes. Haskell's <code>seq</code> evaluates to exactly this form.",
+      "connects": "The loosest form in the chain: <a href=\"concept_head_normal_form.html\">HNF</a> ⊆ WHNF. Every <a href=\"concept_value.html\">value</a> is in WHNF."
+    },
+    {
+      "key": "value",
+      "title": "Concept: Value",
+      "h1": "Value",
+      "tagline": "In call-by-value, a λ or a variable: something that may be passed as an argument.",
+      "sentence": "A <strong>value</strong> is what call-by-value is allowed to substitute: an abstraction or (for open terms) a variable. <code>(λx. M) V → M[x := V]</code> requires V to be a value.",
+      "analogy_big": "A value is a sealed package the post office will accept.",
+      "analogy": "Loose, still-changing contents must be packed (evaluated) before they can be sent.",
+      "see": "<pre><code><span class=\"o\">λx. (λy. y y) (λy. y y)         ·     ·    ·     ✓    ✓</span></code></pre><p class=\"muted\"><code>λx. Ω</code> is a value, and head reduction on it runs out of fuel.</p>",
+      "wrong": "\"A value is a term in normal form.\"",
+      "right": "A value may contain redexes under its λ (<code>λx. (λy. y) x</code>), and a normal form need not be a value (<code>x y</code> is normal but not a value).",
+      "connects": "Values ⊆ <a href=\"concept_weak_head_normal_form.html\">WHNF</a>. A value is independent of <a href=\"concept_beta_normal_form.html\">β-normal form</a>: neither implies the other."
+    }
+  ],
+  "picture_svg": "<svg viewBox=\"0 0 660 280\" width=\"660\" role=\"img\" aria-label=\"Nested normal forms\"><g fill=\"none\" stroke-width=\"2\"><rect x=\"10\" y=\"10\" width=\"640\" height=\"260\" rx=\"16\" stroke=\"#9a9992\"/><rect x=\"40\" y=\"50\" width=\"600\" height=\"205\" rx=\"14\" stroke=\"#82aaff\"/><rect x=\"70\" y=\"90\" width=\"300\" height=\"150\" rx=\"12\" stroke=\"#c792ea\"/><rect x=\"100\" y=\"130\" width=\"180\" height=\"95\" rx=\"10\" stroke=\"#d4a017\"/><rect x=\"330\" y=\"62\" width=\"295\" height=\"178\" rx=\"12\" stroke=\"#4ade80\" stroke-dasharray=\"6 4\"/></g><g font-family=\"Inter, sans-serif\" font-size=\"13\"><text x=\"22\" y=\"32\" fill=\"#9a9992\">all terms · e.g. (λx. x) y</text><text x=\"52\" y=\"72\" fill=\"#82aaff\">WHNF · λx. (λy. y) x</text><text x=\"82\" y=\"112\" fill=\"#c792ea\">HNF · x ((λa. a) b)</text><text x=\"112\" y=\"152\" fill=\"#d4a017\">β-NF · λx. f x</text><text x=\"112\" y=\"200\" fill=\"#eeece6\">βη-NF · f</text><text x=\"432\" y=\"82\" fill=\"#4ade80\">values (CBV)</text><text x=\"432\" y=\"102\" fill=\"#9a9992\">λ-abstractions, variables</text><text x=\"432\" y=\"190\" fill=\"#9a9992\">inside WHNF, but cuts</text><text x=\"432\" y=\"206\" fill=\"#9a9992\">across HNF and β-NF</text></g><rect x=\"108\" y=\"180\" width=\"120\" height=\"32\" rx=\"8\" fill=\"none\" stroke=\"#eeece6\" stroke-width=\"1.5\"/></svg>",
+  "picture_caption": "Nested: βη-NF ⊆ β-NF ⊆ HNF ⊆ WHNF (each example sits in its box but not the next inner one). Values (dashed) lie inside WHNF and overlap the inner boxes: <code>f</code> and <code>λx. f x</code> are values, <code>x ((λa. a) b)</code> is not.",
+  "pairs": [
+    [
+      "β-NF vs βη-NF",
+      "\"λx. f x is fully simplified.\"",
+      "It's β-normal but η-reduces to <code>f</code>."
+    ],
+    [
+      "HNF vs WHNF",
+      "\"λx. (λy. y) x is in head normal form: it starts with λ.\"",
+      "Starting with λ gives WHNF. HNF looks under the λ, where the head is a redex."
+    ],
+    [
+      "WHNF vs finished",
+      "\"It's in WHNF, so evaluation is done.\"",
+      "Only the outer shape is fixed. <code>λx. Ω</code> is WHNF with an infinite body."
+    ],
+    [
+      "value vs normal form",
+      "\"Values are normal forms.\"",
+      "<code>λx. (λy. y) x</code> is a value, not normal. <code>x y</code> is normal, not a value."
+    ],
+    [
+      "HNF vs β-NF",
+      "\"Head variable means done.\"",
+      "Arguments may still hold redexes: <code>x ((λa. a) b)</code>."
+    ]
+  ],
+  "quiz": [
+    [
+      "<code>λx. f x</code>, the <em>tightest</em> form it is in.",
+      "β-normal form",
+      "No β-redex, but it is an η-redex, so not βη-normal."
+    ],
+    [
+      "<code>x ((λa. a) b)</code>, the tightest form.",
+      "Head normal form",
+      "Its head is the variable x, but a redex hides in the argument."
+    ],
+    [
+      "<code>λx. (λy. y) x</code>, the tightest of HNF / WHNF.",
+      "Weak head normal form",
+      "It starts with λ, but under it the head is a redex."
+    ],
+    [
+      "What call-by-value may pass into <code>(λx. M) □</code>.",
+      "Value",
+      "A λ or a variable."
+    ],
+    [
+      "<code>f</code>, the tightest form.",
+      "βη-normal form",
+      "Nothing left, not even η."
+    ],
+    [
+      "What Haskell's <code>seq</code> forces its first argument to.",
+      "Weak head normal form",
+      "Just enough to know the outer constructor or λ."
+    ]
+  ]
+}

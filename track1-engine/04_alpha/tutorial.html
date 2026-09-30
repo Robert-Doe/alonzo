@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Free Variables & α-Equivalence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700;800&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../shared/course.css">
+</head>
+<body style="--accent:#fb923c;--accent-rgb:251,146,60">
+<nav class="topbar"><a class="brand" href="../../index.html">λ <span>Alonzo</span></a><a href="../../prerequisites.html">Prerequisites</a><a href="../../GLOSSARY.md">Glossary</a><a href="DECISIONS.md">Decisions</a><span class="spacer"></span><span class="muted">Track 1 · Phase 1 · Module 4 of 34</span></nav>
+
+<header class="hero">
+  <div class="badge">MODULE 04</div>
+  <h1>Free Variables &amp; <span>α-Equivalence</span></h1>
+  <p class="tagline">Until now the engine treated names as plain strings. This module teaches it which λ each name refers to, and that renaming a λ's parameter changes nothing, <em>if</em> you do it carefully.</p>
+  <div class="hero-grid">
+    <div class="hero-stat"><div class="num">3</div><div class="label">equations define FV</div></div>
+    <div class="hero-stat"><div class="num">2</div><div class="label">independent α-tests</div></div>
+    <div class="hero-stat"><div class="num">3000/3000</div><div class="label">random pairs agree</div></div>
+  </div>
+</header>
+
+<main class="container">
+
+<section id="s00">
+  <h2><span class="num">00</span>Prerequisites</h2>
+  <div class="prereq-bar">
+    <a class="tag" href="../../prerequisites/p2_variables_binding_scope.html#binder">P2.1 binders</a>
+    <a class="tag" href="../../prerequisites/p2_variables_binding_scope.html#free-bound">P2.2 free vs bound</a>
+    <a class="tag" href="../../prerequisites/p2_variables_binding_scope.html#shadowing">P2.3 shadowing</a>
+    <a class="tag" href="../../prerequisites/p2_variables_binding_scope.html#names-dont-matter">P2.5 bound names don't matter</a>
+    <a class="tag" href="../../prerequisites/p5_structural_induction.html#dominoes">P5.1 structural induction</a>
+  </div>
+  <p>From the course: <a href="../03_parser/tutorial.html">Module 3's parser</a>. From here on, tests and demos type terms as text.</p>
+</section>
+
+<section id="s01">
+  <h2><span class="num">01</span>The Big Analogy</h2>
+  <div class="analogy">
+    <div class="big">Every λ is a household that coins its own nickname.</div>
+    <p>Picture houses nested inside each other, like rooms within rooms. The header <code>λx.</code> means "<em>in this house, 'x' is what we call the guest who arrives at the door</em>." Everyone inside uses the nickname.</p>
+    <ul>
+      <li><strong>Bound use.</strong> Someone inside says "x" and means their house's guest. If they're inside <em>two</em> houses that both coined "x", they mean the <strong>nearest</strong> one, the house they're standing in. That's shadowing.</li>
+      <li><strong>Free use.</strong> Someone says "y", but no house around them ever coined "y". They must mean someone from <em>outside</em> all the houses, like a neighbor down the street.</li>
+      <li><strong>α-conversion.</strong> A family can change its nickname from "x" to "Kiddo" throughout the house and nothing changes. Everyone still means the same guest. That's why <code>λx. x</code> and <code>λy. y</code> are the same function.</li>
+      <li><strong>Capture</strong> (the danger). If the family picks a new nickname that someone in the house <em>already uses</em> for the neighbor ("y"), then "y" now means two people, and the neighbor gets confused with the guest. A careful family checks before renaming.</li>
+    </ul>
+  </div>
+  <p>This module teaches the engine to answer "who is 'x' here?" for every name. That is <em>binding</em>, and it's the first thing in the course about <strong>meaning</strong> rather than spelling.</p>
+</section>
+
+<section id="s02">
+  <h2><span class="num">02</span>What Happens, Step by Step</h2>
+  <ol class="steps">
+    <li><code>freeVars(t)</code> applies three equations recursively. A variable is free in itself. A λ removes its own name from its body's free set. An application unions both sides.</li>
+    <li><code>occurrences(t)</code> walks the tree carrying a <em>scope</em>, a stack of the binders passed so far. At each variable, it searches the scope from the innermost outward for a matching name.</li>
+    <li><code>alphaEquivalent(a, b)</code> walks both trees together with two scopes. A bound variable is compared by <em>how many binders out</em> its λ is. A free variable is compared by name.</li>
+    <li><code>renameBinder(λx. M, y)</code> checks two capture conditions before renaming. If either fails, it refuses and explains why.</li>
+    <li><code>canonicalize(t)</code> renames every binder to <code>v0, v1, …</code> in order, giving a second, independent α-test: equal canonical forms ⇔ α-equivalent.</li>
+  </ol>
+</section>
+
+<section id="s03">
+  <h2><span class="num">03</span>The Map: Who Binds Whom</h2>
+  <p>The term <code>(λx. λx. x y) x</code> has three variable uses. Here's what <code>occurrences</code> reports (real demo output):</p>
+<pre><code><span class="o">  x at fn.body.body.fn    bound by the λ at fn.body
+  y at fn.body.body.arg   FREE
+  x at arg                FREE</span></code></pre>
+  <div class="diagram">
+    <svg viewBox="0 0 620 270" width="620" role="img" aria-label="Binding arrows in (λx. λx. x y) x">
+      <g stroke="#3a3a3f" stroke-width="2">
+        <line x1="310" y1="30" x2="200" y2="80"/><line x1="310" y1="30" x2="430" y2="80"/>
+        <line x1="200" y1="80" x2="200" y2="140"/><line x1="200" y1="140" x2="200" y2="190"/>
+        <line x1="200" y1="190" x2="150" y2="240"/><line x1="200" y1="190" x2="250" y2="240"/>
+      </g>
+      <g font-family="JetBrains Mono, monospace" font-size="15" text-anchor="middle" dominant-baseline="central">
+        <circle cx="310" cy="30" r="16" fill="#18181b" stroke="#a78bfa" stroke-width="2"/><text x="310" y="30" fill="#a78bfa">@</text>
+        <rect x="172" y="66" width="56" height="28" rx="14" fill="#18181b" stroke="#5c5c58" stroke-width="2"/><text x="200" y="80" fill="#9a9992">λx</text>
+        <rect x="172" y="126" width="56" height="28" rx="14" fill="#18181b" stroke="#fb923c" stroke-width="2"/><text x="200" y="140" fill="#fb923c">λx</text>
+        <circle cx="200" cy="190" r="16" fill="#18181b" stroke="#a78bfa" stroke-width="2"/><text x="200" y="190" fill="#a78bfa">@</text>
+        <circle cx="150" cy="240" r="15" fill="#18181b" stroke="#fb923c" stroke-width="2"/><text x="150" y="240" fill="#fb923c">x</text>
+        <circle cx="250" cy="240" r="15" fill="#18181b" stroke="#f87171" stroke-width="2" stroke-dasharray="4 3"/><text x="250" y="240" fill="#f87171">y</text>
+        <circle cx="430" cy="80" r="15" fill="#18181b" stroke="#f87171" stroke-width="2" stroke-dasharray="4 3"/><text x="430" y="80" fill="#f87171">x</text>
+      </g>
+      <path d="M 134 236 C 80 200, 90 150, 170 140" fill="none" stroke="#fb923c" stroke-width="2" marker-end="url(#ah)"/>
+      <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#fb923c"/></marker></defs>
+      <g font-family="Inter, sans-serif" font-size="12" fill="#9a9992">
+        <text x="238" y="76">outer λx: shadowed, binds nothing</text>
+        <text x="238" y="136" fill="#fb923c">inner λx: binds the x below</text>
+        <text x="270" y="244" fill="#f87171">free: no λy above</text>
+        <text x="452" y="84" fill="#f87171">free: outside every λ</text>
+        <text x="40" y="190">nearest wins</text>
+      </g>
+    </svg>
+    <div class="caption">Three x's, three different fates. The outer <code>λx</code> binds <em>nothing</em>: the inner one shadows it, and the final <code>x</code> is outside both.</div>
+  </div>
+  <a class="lab-link" data-lab="04" data-term="(λx. λx. x y) x">See it colored in the Lab</a><span class="lab-note"></span>
+</section>
+
+<section id="s04">
+  <h2><span class="num">04</span>The Code, Explained</h2>
+  <h3>Free variables: three equations, three cases</h3>
+  <p class="file-label">src/alpha.ts</p>
+<pre><code><span class="c">//   FV(x)     = { x }
+//   FV(λx. M) = FV(M) − { x }
+//   FV(M N)   = FV(M) ∪ FV(N)</span>
+<span class="k">export function</span> freeVars(t: Term): Set&lt;string&gt; {
+  <span class="k">switch</span> (t.kind) {
+    <span class="k">case</span> <span class="s">"var"</span>: <span class="k">return new</span> Set([t.name]);
+    <span class="k">case</span> <span class="s">"lam"</span>: { <span class="k">const</span> s = freeVars(t.body); s.delete(t.param); <span class="k">return</span> s; }
+    <span class="k">case</span> <span class="s">"app"</span>: { <span class="k">const</span> s = freeVars(t.fn); <span class="k">for</span> (<span class="k">const</span> v <span class="k">of</span> freeVars(t.arg)) s.add(v); <span class="k">return</span> s; }
+  }
+}</code></pre>
+  <p>Same skeleton as <code>size</code> in Module 1. The only new idea is in the λ case: a binder <em>removes</em> its name from what it sees below.</p>
+
+  <h3>α-equivalence: compare distances, not names</h3>
+<pre><code><span class="k">function</span> distance(name: string, scope: string[]): number {
+  <span class="k">for</span> (<span class="k">let</span> i = scope.length - 1; i &gt;= 0; i--) <span class="k">if</span> (scope[i] === name) <span class="k">return</span> scope.length - 1 - i;
+  <span class="k">return</span> -1; <span class="c">// free</span>
+}
+<span class="c">// … in the var case:</span>
+<span class="k">const</span> da = distance(a.name, sa), db = distance(b.name, sb);
+<span class="k">return</span> da === db &amp;&amp; (da !== -1 || a.name === b.name);</code></pre>
+  <p>In <code>λx. λy. x</code>, the body's <code>x</code> is at distance 1 (skip one binder, <code>λy</code>, to reach it). In <code>λa. λb. a</code>, the body's <code>a</code> is also at
+  distance 1. Same distance, so the same variable, whatever it's called. Free variables have no distance, so they must match by name.
+  <em>That distance is the de Bruijn index you'll build in Module 6.</em></p>
+
+  <h3>Renaming a binder: the two capture checks</h3>
+<pre><code><span class="k">if</span> (freeVars(t.body).has(y))                                  <span class="c">// (1) an outside y would be captured</span>
+  <span class="k">return</span> { ok: <span class="k">false</span>, reason: `'${y}' is free in the body, so the new λ${y} would capture it` };
+<span class="c">// (2) while renaming x→y in the body, note if we're under an inner λy:</span>
+<span class="k">case</span> <span class="s">"lam"</span>:
+  <span class="k">if</span> (u.param === x) <span class="k">return</span> u;                               <span class="c">// shadowed: these x's aren't ours</span>
+  <span class="k">return</span> Lam(u.param, go(u.body, underY || u.param === y));</code></pre>
+  <div class="bullets"><div class="label">BULLET POINTS</div><ul>
+    <li>"Free" is always <em>relative to a term</em>: the same occurrence is free in <code>x y</code> and bound in <code>λx. x y</code>.</li>
+    <li>A variable use belongs to its <em>nearest</em> enclosing binder with the same name.</li>
+    <li>α-equivalence ignores bound names, but never free ones.</li>
+    <li>Renaming is safe only if it can't change any use's binder. Otherwise it's <em>capture</em>.</li>
+  </ul></div>
+</section>
+
+<section id="s05">
+  <h2><span class="num">05</span>Limits: What You Cannot Do Yet</h2>
+  <div class="compare">
+    <div class="cant"><h4>Can't do yet</h4><ul>
+      <li>Substitute a term for a variable (Module 5). Renaming is only the special case "substitute a variable."</li>
+      <li>Fix a capturing rename automatically. Here it's refused. Module 5 renames the obstructing inner binder instead.</li>
+      <li>Rename a binder that isn't the outermost λ.</li>
+      <li>Store terms "up to α" so equality is instant (Module 6's de Bruijn indices).</li>
+    </ul></div>
+    <div class="can"><h4>Can do now</h4><ul>
+      <li>Compute free variables, and tell closed terms (combinators) from open ones.</li>
+      <li>Point every variable use at its binder, shadowing included.</li>
+      <li>Decide α-equivalence in two independent ways.</li>
+      <li>Detect both kinds of variable capture.</li>
+    </ul></div>
+  </div>
+</section>
+
+<section id="s06">
+  <h2><span class="num">06</span>Run It</h2>
+  <div class="run-box"><h4>Run the tests</h4>
+  <pre><code>cd alonzo/track1-engine/04_alpha
+npm test</code></pre>
+  <div class="desc">12 new tests + 41 carried from Modules 1–3. Actual summary:</div>
+<pre><code><span class="o"># tests 53
+# pass 53
+# fail 0</span></code></pre>
+  <div class="desc">Then:</div>
+  <pre><code>npm run demo</code></pre>
+  <div class="desc">Actual output (the "who binds whom" section is in 03 above):</div>
+<pre><code><span class="o">== Free variables ==
+λx. x                FV = {}   (closed)
+λx. x y              FV = {y}
+(λx. x) x            FV = {x}
+λx. λy. x y z        FV = {z}
+λx y z. x z (y z)    FV = {}   (closed)
+…
+== α-equivalence ==
+λx. x          ≡α λy. y          ? true
+λx. λy. x y    ≡α λy. λx. y x    ? true
+λx. λx. x      ≡α λa. λb. a      ? false
+λx. y          ≡α λy. y          ? false
+
+== Renaming one binder ==
+λx. λz. x z      rename x→y:  OK  λy. λz. y z
+λx. x y          rename x→y:  REFUSED: 'y' is free in the body, so the new λy would capture it
+λx. λy. x        rename x→y:  REFUSED: an occurrence of x inside an inner λy would become 'y' and be captured by that inner λy
+λx. λy. λx. x    rename x→y:  OK  λy. λy. λx. x
+
+== Canonical forms (every binder distinct: v0, v1, …) ==
+λx. λx. x        → λv0. λv1. v1
+(λx. x) λx. x    → (λv0. v0) λv1. v1
+λy. λx. y x      → λv0. λv1. v0 v1
+λx. v0           → λv1. v0
+
+== Two independent α-tests agree ==
+agree on 3000/3000 random pairs (147 of them α-equivalent)</span></code></pre></div>
+  <div class="callout red"><div class="label">Getting a blank or broken result?</div>
+  <ul>
+    <li><strong>"(λx. x) x has FV {x}? But x is bound!"</strong> Only the <em>first</em> <code>x</code> is. The last one is outside the λ's parentheses, so it's free. FV is about occurrences, not spellings.</li>
+    <li><strong>A rename you expected to work is refused:</strong> read the reason. It names which of the two capture conditions failed. Pick a name that's neither free in the body nor bound by an inner λ over an <code>x</code>.</li>
+    <li><strong>Test count is 12, not 53:</strong> you ran <code>test.ts</code> alone. <code>npm test</code> also runs the carried-over tests in <code>tests/</code>.</li>
+  </ul></div>
+  <a class="lab-link" data-lab="04">Open Lab 04: Binding Explorer</a><span class="lab-note"></span>
+</section>
+
+<section id="s07">
+  <h2><span class="num">07</span>Brain Exercise</h2>
+  <div class="brain"><div class="label">Think before you reveal</div>
+  <p><code>K = λx. λy. x</code> takes two arguments and returns the <em>first</em>. Suppose someone "tidies it up" by renaming the outer binder to <code>y</code>,
+  mechanically replacing <code>x</code> with <code>y</code> everywhere.</p>
+  <p><strong>(1) What term do they get, and what does it do with two arguments? (2) Which of the two capture conditions does the engine cite?
+  (3) Of all possible single-letter names, which ones can the outer binder of K safely be renamed to?</strong></p>
+  <a class="lab-link" data-lab="04" data-term="λx. λy. x">Try renames in the Lab</a>
+  <details><summary>Reveal the answer</summary>
+  <p>(1) The mechanical rename gives <code>λy. λy. y</code>. By shadowing, that final <code>y</code> now refers to the <em>inner</em> λ, so the function returns its
+  <strong>second</strong> argument. K has silently become a different function (sometimes called K*). The demo shows the engine refusing:
+  <code>REFUSED: an occurrence of x inside an inner λy would become 'y' and be captured by that inner λy</code>.</p>
+  <p>(2) Condition <strong>(2)</strong>: a free <code>x</code> of the body sits under an inner <code>λy</code>. Condition (1) is fine, since K's body has no free <code>y</code>. K is closed.</p>
+  <p>(3) <strong>Every name except <code>y</code>.</strong> K has no free variables, so condition (1) can never fail, and the only inner binder is <code>λy</code>. So <code>a</code>, <code>z</code>, <code>q</code>,
+  even <code>x</code> (a no-op) are all fine. Try <code>z</code> in the Lab: <code>λz. λy. z</code>. This is the whole story of capture in miniature, and Module 5 turns
+  "refuse" into "rename the inner binder out of the way."</p></details></div>
+</section>
+
+<section id="s08">
+  <h2><span class="num">08</span>There Are No Dumb Questions</h2>
+  <div class="qa">
+    <p class="q">Why build two α-equivalence algorithms? Isn't one enough?</p>
+    <p class="a">One is enough if it's right. Two that share no code, checked against each other on 3000 random pairs, is how you gain confidence it <em>is</em> right. If they ever disagreed, one of them would have a bug, and the failing pair would be printed.</p>
+    <p class="q">If <code>λx. x</code> and <code>λy. y</code> are "the same," why does the engine store them differently?</p>
+    <p class="a">Because a tree with names has to store <em>some</em> name. Textbooks quietly say "we identify α-equivalent terms." Implementations must choose: keep names and compare with <code>alphaEquivalent</code> (this module), or drop names entirely (Module 6).</p>
+    <p class="q">What does <code>ε</code> mean in a path?</p>
+    <p class="a">The empty path: the root of the tree itself. A path like <code>fn.body</code> means "go into the function part, then into the λ's body." Module 7 names redexes by their paths.</p>
+    <p class="q">When would anyone care about free variables? Real programs are closed.</p>
+    <p class="a">Whole programs are, but their <em>pieces</em> aren't. The body of <code>λx. x y</code>, taken on its own, has <code>y</code> free. Every reduction step (Module 8) works on pieces, and compilers (Track 2 C7) must compute exactly which free variables each function captures in its closure.</p>
+    <p class="q">Can the canonical names <code>v0, v1</code> clash with names the user wrote?</p>
+    <p class="a">With free names, no: <code>canonicalize</code> skips them (<code>λx. v0</code> becomes <code>λv1. v0</code>). With bound names, it doesn't matter, because every binder is renamed.</p>
+  </div>
+</section>
+
+<section id="s09">
+  <h2><span class="num">09</span>What's Next</h2>
+  <p>Renaming is the gentlest special case of <strong>substitution</strong>: replacing a variable with another <em>variable</em>. <strong>Module 5</strong>
+  replaces a variable with an arbitrary <em>term</em>, <code>M[x := N]</code>. That operation is at the heart of computation (β-reduction, Module 8).
+  It hits the same capture danger at full strength: substituting <code>y</code> into <code>λy. x</code> naively gives <code>λy. y</code>. We'll
+  watch naive substitution fail on real examples, then fix it by renaming binders to fresh names, the step this module only refused.</p>
+</section>
+
+<div class="module-nav">
+  <a href="../03_parser/tutorial.html"><span class="dir">← Previous</span>Module 3: Parser</a>
+  <a class="next" href="../05_substitution/tutorial.html"><span class="dir">Next →</span>Module 5: Capture-Avoiding Substitution</a>
+</div>
+</main>
+<footer>Alonzo · Track 1 · Module 4 · <a href="DECISIONS.md">DECISIONS.md</a> · <a href="../../GLOSSARY.md">Glossary</a></footer>
+<script src="../../shared/course.js"></script>
+</body>
+</html>

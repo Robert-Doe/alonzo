@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Binding Vocabulary Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700;800&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../shared/course.css">
+<style>
+  .defgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin: 20px 0; }
+  .defgrid a { display: block; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; text-decoration: none; color: var(--text); }
+  .defgrid a:hover { border-color: var(--brand); }
+  .defgrid .t { font-family: var(--display); font-weight: 800; color: var(--brand); font-size: 1.15rem; }
+  .defgrid .ex { font-family: var(--mono); font-size: 13px; color: var(--muted); margin-top: 6px; }
+  .quiz-row { display: grid; grid-template-columns: 1fr 190px; gap: 10px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .quiz-row select { font: 14px var(--body); background: var(--code-bg); color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 5px; }
+  .quiz-row .res { grid-column: 1 / -1; font-size: 14px; }
+  button.check { background: var(--brand); color: #1a1305; font-family: var(--body); border: 0; border-radius: 7px; padding: 8px 16px; font-weight: 700; cursor: pointer; margin-top: 14px; }
+  @media (max-width: 560px) { .quiz-row { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body style="--accent:#f472b6;--accent-rgb:244,114,182">
+<nav class="topbar"><a class="brand" href="../../index.html">λ <span>Alonzo</span></a><a href="tutorial.html">Module 5 tutorial</a><a href="../04_alpha/tutorial.html">Module 4</a><span class="spacer"></span><span class="muted">Vocabulary web · hub</span></nav>
+<header class="hero">
+  <div class="badge">VOCABULARY HUB</div>
+  <h1>Binder · Scope · Free · Bound · <span>Capture</span></h1>
+  <p class="tagline">Five words that get used interchangeably and shouldn't be. Here they are side by side, placed on one picture, with the mix-ups named and corrected.</p>
+</header>
+<main class="container">
+
+<section>
+  <h2>Definitions, side by side</h2>
+  <div class="defgrid">
+    <a href="concept_binder.html"><div class="t">Binder</div><div>The <code>λx.</code> that <em>introduces</em> a name. A declaration, not a use.</div><div class="ex">λx. x y → "λx"</div></a>
+    <a href="concept_scope.html"><div class="t">Scope</div><div>The region where a binder's name means its parameter: the body, minus inner rebindings.</div><div class="ex">(λx. <u>x y</u>) z</div></a>
+    <a href="concept_bound_variable.html"><div class="t">Bound variable</div><div>A <em>use</em> of a name inside a matching scope. It refers to the nearest such binder.</div><div class="ex">λx. <u>x</u> y</div></a>
+    <a href="concept_free_variable.html"><div class="t">Free variable</div><div>A use with no matching binder around it. Its meaning comes from outside.</div><div class="ex">λx. x <u>y</u></div></a>
+    <a href="concept_variable_capture.html"><div class="t">Capture</div><div>A bug: an operation moves a free name under a same-named binder, and it becomes bound.</div><div class="ex">(λy. x)[x:=y] ↛ λy. y</div></a>
+  </div>
+</section>
+
+<section>
+  <h2>One picture: where each term lives</h2>
+  <div class="diagram">
+    <svg viewBox="0 0 700 300" width="700" role="img" aria-label="Binder, scope, bound, free and capture on one term">
+      <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#f472b6"/></marker>
+            <marker id="arr2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#f87171"/></marker></defs>
+      <g font-family="JetBrains Mono, monospace" font-size="24">
+        <text x="40" y="70" fill="#eeece6" xml:space="preserve">(<tspan fill="#d4a017" font-weight="700">λx.</tspan> <tspan fill="#d4a017">x</tspan> <tspan fill="#f87171">y</tspan>) <tspan fill="#f87171">y</tspan></text>
+      </g>
+      <rect x="112" y="40" width="54" height="42" rx="6" fill="none" stroke="#82aaff" stroke-dasharray="5 4"/>
+      <g font-family="Inter, sans-serif" font-size="13">
+        <text x="56" y="112" fill="#d4a017">① binder</text>
+        <text x="112" y="30" fill="#82aaff">② scope (the body)</text>
+        <text x="96" y="134" fill="#d4a017">③ bound: refers to ①</text>
+        <text x="150" y="156" fill="#f87171">④ free: no λy around it</text>
+        <text x="206" y="112" fill="#f87171">④ free: outside the scope</text>
+      </g>
+      <path d="M 126 78 C 118 100, 90 100, 80 80" fill="none" stroke="#d4a017" stroke-width="1.5" marker-end="url(#arr)"/>
+      <line x1="320" y1="20" x2="320" y2="280" stroke="#3a3a3f"/>
+      <g font-family="JetBrains Mono, monospace" font-size="20">
+        <text x="350" y="60" fill="#eeece6" xml:space="preserve">(λy. x)[x := <tspan fill="#f87171">y</tspan>]</text>
+        <text x="350" y="150" fill="#9a9992">naive:</text>
+        <text x="440" y="150" fill="#d4a017" xml:space="preserve">λy. y</text>
+        <text x="350" y="230" fill="#9a9992">correct:</text>
+        <text x="460" y="230" fill="#d4a017" xml:space="preserve">λy1. <tspan fill="#f87171">y</tspan></text>
+      </g>
+      <path d="M 526 70 C 540 110, 500 120, 492 134" fill="none" stroke="#f87171" stroke-width="2" marker-end="url(#arr2)"/>
+      <g font-family="Inter, sans-serif" font-size="13">
+        <text x="540" y="104" fill="#f87171">⑤ capture: the free y moved</text>
+        <text x="540" y="120" fill="#f87171">into λy's scope and became bound</text>
+        <text x="350" y="262" fill="#4ade80">rename the binder first: y stays free ✓</text>
+      </g>
+    </svg>
+    <div class="caption">Left: ①–④ on <code>(λx. x y) y</code>. Right: ⑤, capture, and the capture-avoiding fix (real <code>subst</code> output).</div>
+  </div>
+  <p>Read the chain as: a <strong>binder</strong> ① owns a <strong>scope</strong> ②. Uses inside the scope are <strong>bound</strong> ③. Uses outside every matching scope are <strong>free</strong> ④.
+  <strong>Capture</strong> ⑤ is an operation turning a ④ into a ③ by mistake.</p>
+</section>
+
+<section>
+  <h2>Commonly confused pairs</h2>
+  <div class="table-wrap"><table class="data">
+    <tr><th>Pair</th><th>The wrong statement</th><th>The correction</th></tr>
+    <tr><td>binder vs bound variable</td><td>"In <code>λx. x</code>, both x's are bound variables."</td><td>The first is the <em>binder</em> (a declaration). Only the second is a bound <em>occurrence</em>. <code>counts(λx. x)</code> reports 1 variable.</td></tr>
+    <tr><td>scope vs "everything to the right"</td><td>"λx's scope runs to the end of the term."</td><td>It runs to the enclosing <code>)</code>. In <code>(λx. x) x</code> the last <code>x</code> is outside, so it's free.</td></tr>
+    <tr><td>free vs undefined/error</td><td>"A free variable is a mistake."</td><td>Free variables are legal. Every sub-term of a program has them. Only <em>whole programs</em> are usually closed.</td></tr>
+    <tr><td>bound vs closed</td><td>"<code>λx. x y</code> is bound, so it's closed."</td><td>Bound describes occurrences, and closed describes whole terms. <code>y</code> is free, so the term is open.</td></tr>
+    <tr><td>capture vs shadowing</td><td>"<code>λx. λx. x</code> is a capture."</td><td>That's shadowing: legal nesting you wrote on purpose. Capture is a binding <em>change</em> made by a buggy operation.</td></tr>
+    <tr><td>free vs "free in M"</td><td>"y is a free variable" (full stop).</td><td>Freeness is relative to a term. <code>y</code> is free in <code>x y</code> but bound in <code>λy. x y</code>.</td></tr>
+  </table></div>
+</section>
+
+<section>
+  <h2>Scenario quiz: which term fits?</h2>
+  <p>For each scenario, pick the term that describes it best, then check.</p>
+  <div id="quiz"></div>
+  <button class="check" id="check">Check answers</button>
+  <p id="score" class="muted"></p>
+</section>
+
+<div class="module-nav">
+  <a href="tutorial.html"><span class="dir">← Back to</span>Module 5: Capture-Avoiding Substitution</a>
+  <a class="next" href="concept_binder.html"><span class="dir">Start the tour →</span>Binder</a>
+</div>
+</main>
+<footer>Alonzo · Module 5 vocabulary web</footer>
+<script>
+(function () {
+  var OPTIONS = ["binder", "scope", "bound variable", "free variable", "capture"];
+  var Q = [
+    ["In λf. f z, the z.", "free variable", "No λz anywhere around it: its meaning comes from outside."],
+    ["The λq. part of λq. q q.", "binder", "It introduces the name q. It's a declaration, not a use."],
+    ["In (λx. x y) z, the stretch x y between the dot and the closing parenthesis.", "scope", "That's the body of λx, the region where x means its parameter."],
+    ["The second x in λx. x.", "bound variable", "A use of x inside the scope of λx."],
+    ["Turning λy. x into λy. y while substituting the outside y for x.", "capture", "The free y moved under λy and became bound. The meaning changed."],
+    ["The last x in (λx. x) x.", "free variable", "The closing parenthesis ended λx's scope before it."],
+    ["The region of a term in which the name x refers to one particular λx.", "scope", "That region is the binder's scope: its body, minus holes where an inner λx shadows it."],
+  ];
+  var box = document.getElementById("quiz");
+  var sels = Q.map(function (q, i) {
+    var row = document.createElement("div"); row.className = "quiz-row";
+    var p = document.createElement("div"); p.textContent = (i + 1) + ". " + q[0];
+    var s = document.createElement("select");
+    s.innerHTML = '<option value="">choose…</option>' + OPTIONS.map(function (o) { return '<option>' + o + '</option>'; }).join("");
+    var res = document.createElement("div"); res.className = "res";
+    row.appendChild(p); row.appendChild(s); row.appendChild(res); box.appendChild(row);
+    return { s: s, res: res, q: q };
+  });
+  document.getElementById("check").addEventListener("click", function () {
+    var right = 0;
+    sels.forEach(function (x) {
+      var ok = x.s.value === x.q[1];
+      if (ok) right++;
+      x.res.innerHTML = (ok ? '<span style="color:var(--green)">✓ ' : '<span style="color:var(--red)">✗ Answer: <b>' + x.q[1] + '</b>. ') + x.q[2] + '</span>';
+    });
+    document.getElementById("score").textContent = right + " / " + Q.length + " correct";
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Functions as Mappings</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700;800&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../shared/course.css">
+</head>
+<body style="--accent:#d4a017;--accent-rgb:245,200,66">
+<nav class="topbar"><a class="brand" href="../index.html">λ <span>Alonzo</span></a><a href="../prerequisites.html">← All prerequisites</a><span class="spacer"></span><span class="muted">P1 of 8</span></nav>
+<header class="hero">
+  <div class="badge">PREREQUISITE P1</div>
+  <h1>Functions as <span>Mappings</span></h1>
+  <p class="tagline">In the λ-calculus, functions are the only thing there is. Before building one, get clear on what a function <em>is</em>.</p>
+</header>
+<main class="container">
+
+<section id="mapping">
+  <h2><span class="num">P1.1</span>A function is a mapping, not a procedure</h2>
+  <p>In school, <code>f(x) = x + 1</code> looks like a recipe: "take x, add one." Mathematicians mean something
+  more modest. A function is just a <strong>pairing of inputs with outputs</strong>, where every input gets exactly
+  one output. <code>f</code> pairs 1 with 2, 2 with 3, 41 with 42, and so on.</p>
+  <div class="analogy"><div class="big">A function is a vending machine with one slot and one tray.</div>
+  <p>Put a coin marked <em>3</em> in the slot, and the thing marked <em>4</em> drops into the tray. Every time.
+  You don't need to know what gears are inside. Two machines that always drop the same thing for the same coin are,
+  as mappings, the <em>same function</em>, even if their insides differ.</p></div>
+  <p>That last sentence has a name: <strong>extensionality</strong>. Two functions are extensionally equal if they
+  agree on every input. It comes back in Module 11 as <em>η-conversion</em>.</p>
+</section>
+
+<section id="anonymous">
+  <h2><span class="num">P1.2</span>Functions don't need names</h2>
+  <p><code>f(x) = x + 1</code> does two things at once: it <em>makes</em> a function, and it <em>names</em> it
+  <code>f</code>. The λ-calculus separates those. <code>λx. x + 1</code> makes the function and names nothing.
+  Read the <code>λx.</code> as "the function that takes <code>x</code> and returns…".</p>
+  <div class="table-wrap"><table class="data">
+    <tr><th>Notation</th><th>Same idea in</th></tr>
+    <tr><td><code>λx. x + 1</code></td><td>λ-calculus (Church, 1932)</td></tr>
+    <tr><td><code>x ↦ x + 1</code></td><td>mathematics ("maps to")</td></tr>
+    <tr><td><code>x =&gt; x + 1</code></td><td>JavaScript / TypeScript</td></tr>
+    <tr><td><code>lambda x: x + 1</code></td><td>Python</td></tr>
+    <tr><td><code>fun x -&gt; x + 1</code></td><td>OCaml</td></tr>
+  </table></div>
+  <p>Every one of those languages borrowed the idea, and Python and Lisp even borrowed the word, from Church.</p>
+</section>
+
+<section id="first-class">
+  <h2><span class="num">P1.3</span>Functions are values</h2>
+  <p>If a function is just a thing, you can hand it to another function, or get one back as a result. A function that
+  takes or returns functions is called <strong>higher-order</strong>.</p>
+  <pre><code><span class="c">// twice takes a function f and returns a NEW function</span>
+const twice = (f) =&gt; (x) =&gt; f(f(x));
+const addOne = (x) =&gt; x + 1;
+twice(addOne)(5)   <span class="c">// → 7</span></code></pre>
+  <p>In the pure λ-calculus there are no numbers, no strings, no booleans. There are <em>only</em> functions. Everything
+  else (numbers in Module 14, booleans in Module 13) is built out of functions that take and return functions.</p>
+</section>
+
+<section id="currying">
+  <h2><span class="num">P1.4</span>Currying: every function takes exactly one argument</h2>
+  <p>λ-calculus functions take <strong>one</strong> argument. So how do you write addition, which needs two? You write a
+  function that takes the first number and <em>returns a function</em> waiting for the second:</p>
+  <pre><code>add      = λx. λy. x + y
+add 3    = λy. 3 + y          <span class="c">← a function, waiting</span>
+add 3 4  = 7</code></pre>
+  <p>This trick is called <strong>currying</strong>, after Haskell Curry. It was actually published first by Moses
+  Schönfinkel in 1924, and you'll rebuild his paper in Track H1. It explains two notation rules you'll meet
+  constantly:</p>
+  <ul>
+    <li><code>f a b</code> means <code>(f a) b</code>: apply <code>f</code> to <code>a</code>, then apply the result to <code>b</code>. Application is <strong>left-associative</strong>.</li>
+    <li><code>λx. λy. body</code> is often abbreviated <code>λx y. body</code>.</li>
+  </ul>
+  <div class="pencil"><div class="label">Sharpen your pencil</div>
+  <p>With <code>add = λx. λy. x + y</code>, what is <code>add 10</code>? Is it a number?</p>
+  <p><em>Answer: no. It is the function <code>λy. 10 + y</code>. Currying means partial application is free.</em></p></div>
+</section>
+
+<section id="application">
+  <h2><span class="num">P1.5</span>Application is juxtaposition</h2>
+  <p>In most languages you call a function with parentheses: <code>f(x)</code>. In the λ-calculus you just put the function
+  next to its argument: <code>f x</code>. Parentheses are only for <em>grouping</em>, never for calling.
+  <code>(f x)</code> and <code>f x</code> are the same term. <code>f (g x)</code> means "apply <code>g</code> to <code>x</code>, then feed that to
+  <code>f</code>."</p>
+</section>
+
+<section id="in-this-course">
+  <h2><span class="num">P1.6</span>Where this shows up</h2>
+  <ul>
+    <li><strong>Module 1</strong> builds a data type with exactly three shapes: variable, function (λ), application.</li>
+    <li><strong>Module 3</strong> implements the left-associativity rule from P1.4 in the parser.</li>
+    <li><strong>Modules 13–16</strong> build booleans, numbers and lists out of nothing but functions.</li>
+    <li><strong>Module 11</strong> turns extensionality (P1.1) into a reduction rule.</li>
+  </ul>
+</section>
+<div class="module-nav"><a href="../prerequisites.html"><span class="dir">← Back</span>All prerequisites</a><a class="next" href="p2_variables_binding_scope.html"><span class="dir">Next →</span>P2 Variables, Binding &amp; Scope</a></div>
+</main>
+<footer>Alonzo · Prerequisite P1</footer>
+</body>
+</html>

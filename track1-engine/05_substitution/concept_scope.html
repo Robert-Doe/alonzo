@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Concept: Scope</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700;800&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../shared/course.css">
+</head>
+<body style="--accent:#f472b6;--accent-rgb:244,114,182">
+<nav class="topbar"><a class="brand" href="../../index.html">λ <span>Alonzo</span></a><a href="concept_how_they_connect.html">Vocabulary hub</a><a href="tutorial.html">Module 5 tutorial</a><span class="spacer"></span><span class="muted">Vocabulary web · 2 of 5</span></nav>
+<header class="hero">
+  <div class="badge">CONCEPT</div>
+  <h1>Scope</h1>
+  <p class="tagline">The region of a term where a binder's name means <em>that binder's</em> parameter.</p>
+</header>
+<main class="container">
+<section>
+  <h2>In one sentence</h2>
+  <p>The <strong>scope</strong> of <code>λx.</code> is its body, minus any inner region where another <code>λx.</code> takes over the name (shadowing).</p>
+  <div class="analogy"><div class="big">A scope is the floor plan of the room behind the name-tag door.</div>
+  <p>Inside the room, "x" means our guest. Step out through the closing parenthesis and the tag no longer applies. An inner room with its <em>own</em> x-tag is
+  a hole in our floor plan: in there, "x" means their guest.</p></div>
+</section>
+<section>
+  <h2>See it</h2>
+<pre><code>(λx. x (λx. x) y) x
+     <span class="o">^^^^^^^^^^^</span>        scope of the OUTER λx: its body x (λx. x) y …
+            <span class="o">^</span>             … except here: this x belongs to the INNER λx (a hole)
+                  ^  outside every scope: this x is free</code></pre>
+  <p>Scope is decided by the <strong>text</strong>, not by what happens at run time. That's <em>lexical scope</em> (<a href="../../prerequisites/p2_variables_binding_scope.html#lexical">P2.4</a>).
+  In the engine, <code>occurrences()</code> tracks scope as a stack of binders and looks names up innermost-first (<a href="../04_alpha/tutorial.html">Module 4</a>).</p>
+</section>
+<section>
+  <h2>Common mix-up</h2>
+  <div class="callout red"><div class="label">Wrong</div><p>"The scope of a λ is everything to its right."</p></div>
+  <div class="callout green"><div class="label">Right</div><p>It's everything to its right <em>up to the enclosing <code>)</code></em>, minus inner regions that rebind the same name. In <code>(λx. x) x</code> the final <code>x</code> is outside the scope.</p></div>
+</section>
+<section>
+  <div class="callout accent"><div class="label">How this connects to the other terms</div>
+  <p>Every <a href="concept_binder.html">binder</a> owns exactly one scope. A use of the name <em>inside</em> it is a <a href="concept_bound_variable.html">bound variable</a>.
+  A use outside every matching scope is a <a href="concept_free_variable.html">free variable</a>. <a href="concept_variable_capture.html">Capture</a> is what happens when
+  substitution drops a free name <em>into</em> a scope that happens to use the same name.</p></div>
+  <p><a href="concept_how_they_connect.html">→ See all five terms side by side</a></p>
+</section>
+</main>
+<footer>Alonzo · Module 5 vocabulary web</footer>
+</body>
+</html>

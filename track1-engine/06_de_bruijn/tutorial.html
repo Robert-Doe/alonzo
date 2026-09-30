@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>de Bruijn Indices</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700;800&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../shared/course.css">
+</head>
+<body style="--accent:#2dd4bf;--accent-rgb:45,212,191">
+<nav class="topbar"><a class="brand" href="../../index.html">λ <span>Alonzo</span></a><a href="../../prerequisites.html">Prerequisites</a><a href="../../GLOSSARY.md">Glossary</a><a href="DECISIONS.md">Decisions</a><span class="spacer"></span><span class="muted">Track 1 · Phase 1 · Module 6 of 34</span></nav>
+
+<header class="hero">
+  <div class="badge">MODULE 06</div>
+  <h1>de Bruijn <span>Indices</span></h1>
+  <p class="tagline">Two modules fought the same enemy: <em>names</em>. This one deletes them. Every bound variable becomes a number, "how many λs out is my binder?", and α-equivalence becomes plain equality.</p>
+  <div class="hero-grid">
+    <div class="hero-stat"><div class="num">λ. 0</div><div class="label">= λx. x = λy. y = …</div></div>
+    <div class="hero-stat"><div class="num">3</div><div class="label">α-algorithms, all agreeing</div></div>
+    <div class="hero-stat"><div class="num">0</div><div class="label">fresh names needed</div></div>
+  </div>
+</header>
+
+<main class="container">
+
+<section id="s00">
+  <h2><span class="num">00</span>Prerequisites</h2>
+  <div class="prereq-bar">
+    <a class="tag" href="../../prerequisites/p2_variables_binding_scope.html#shadowing">P2.3 shadowing</a>
+    <a class="tag" href="../../prerequisites/p2_variables_binding_scope.html#names-dont-matter">P2.5 names don't matter</a>
+    <a class="tag" href="../../prerequisites/p3_trees_and_recursion.html#recursion-on-trees">P3.3 recursion</a>
+  </div>
+  <p>From the course: <a href="../04_alpha/tutorial.html#s04">Module 4's binder distance</a> (you've already computed de Bruijn indices without the name), and
+  <a href="../05_substitution/tutorial.html">Module 5's capture problem</a>. Vocabulary refresher: <a href="../05_substitution/concept_how_they_connect.html">binding terms hub</a>.</p>
+</section>
+
+<section id="s01">
+  <h2><span class="num">01</span>The Big Analogy</h2>
+  <div class="analogy">
+    <div class="big">A de Bruijn index is "my grandparent" instead of "Alice."</div>
+    <p>Picture a family tree where every λ is a generation. A named variable says "<em>give this to Alice</em>." But many families have an Alice, and
+    renaming one breaks every note that mentions her. A de Bruijn index says "<em>give this to my ancestor 2 generations up</em>." That's a <strong>relation</strong>,
+    not a name.</p>
+    <ul>
+      <li><strong>Names stop mattering.</strong> Two families with differently named people but the same shape give the same "2 generations up" notes. That's α-equivalence as equality.</li>
+      <li><strong>The same person gets different numbers.</strong> To you, Alice is "1 up." To your child, the same Alice is "2 up." One variable, different indices at different depths.</li>
+      <li><strong>Shifting.</strong> If you slip a note saying "1 up" into your child's pocket, it must be rewritten as "2 up" for the child. Otherwise it reaches the wrong person.</li>
+      <li><strong>Capture, renamed.</strong> Forgetting to rewrite the note is exactly capture. The note meant your parent, but now it names the child's parent: you.</li>
+    </ul>
+  </div>
+  <p>So names don't disappear for free. The capture problem turns into an <em>arithmetic</em> problem, which computers are much better at than inventing fresh names.</p>
+</section>
+
+<section id="s02">
+  <h2><span class="num">02</span>What Happens, Step by Step</h2>
+  <ol class="steps">
+    <li><code>toDeBruijn(t, Γ)</code> walks down, keeping the enclosing binder names innermost-first. A bound variable becomes its position in that list.</li>
+    <li>A free variable becomes <em>(number of enclosing binders) + (its position in Γ)</em>. Γ defaults to the free variables, sorted.</li>
+    <li>λ nodes lose their names. The old name is kept only as a display <em>hint</em>.</li>
+    <li><code>fromDeBruijn(d, Γ)</code> goes back, choosing binder names from hints and freshening them so nothing is captured.</li>
+    <li><code>shift(d, c, t)</code> adds <code>d</code> to every index ≥ <code>c</code>. The cutoff grows by one under each λ, protecting indices bound inside.</li>
+    <li><code>substTop(body, s)</code> shifts s up, replaces index 0 in the body (shifting s once more under each λ), then shifts everything down because the binder is gone.</li>
+  </ol>
+</section>
+
+<section id="s03">
+  <h2><span class="num">03</span>The Map: Every Arrow Becomes a Number</h2>
+  <p><code>λx. λy. x (λz. z x)</code> becomes <code>λ. λ. 1 λ. 0 2</code> (real demo output). Each number counts the λs crossed walking <em>up</em> the tree to the binder:</p>
+  <div class="diagram">
+    <svg viewBox="0 0 620 300" width="620" role="img" aria-label="De Bruijn indices as arrows">
+      <defs><marker id="dbA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#d4a017"/></marker>
+            <marker id="dbB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#82aaff"/></marker></defs>
+      <g stroke="#3a3a3f" stroke-width="2">
+        <line x1="300" y1="30" x2="300" y2="80"/><line x1="300" y1="80" x2="300" y2="130"/>
+        <line x1="300" y1="130" x2="220" y2="180"/><line x1="300" y1="130" x2="390" y2="180"/>
+        <line x1="390" y1="180" x2="390" y2="225"/><line x1="390" y1="225" x2="345" y2="270"/><line x1="390" y1="225" x2="435" y2="270"/>
+      </g>
+      <g font-family="JetBrains Mono, monospace" font-size="15" text-anchor="middle" dominant-baseline="central">
+        <rect x="270" y="16" width="60" height="28" rx="14" fill="#18181b" stroke="#d4a017" stroke-width="2"/><text x="300" y="30" fill="#d4a017">λ (x)</text>
+        <rect x="270" y="66" width="60" height="28" rx="14" fill="#18181b" stroke="#4ade80" stroke-width="2"/><text x="300" y="80" fill="#4ade80">λ (y)</text>
+        <circle cx="300" cy="130" r="16" fill="#18181b" stroke="#a78bfa" stroke-width="2"/><text x="300" y="130" fill="#a78bfa">@</text>
+        <circle cx="220" cy="180" r="15" fill="#18181b" stroke="#d4a017" stroke-width="2"/><text x="220" y="180" fill="#d4a017">1</text>
+        <rect x="360" y="166" width="60" height="28" rx="14" fill="#18181b" stroke="#82aaff" stroke-width="2"/><text x="390" y="180" fill="#82aaff">λ (z)</text>
+        <circle cx="390" cy="225" r="16" fill="#18181b" stroke="#a78bfa" stroke-width="2"/><text x="390" y="225" fill="#a78bfa">@</text>
+        <circle cx="345" cy="270" r="15" fill="#18181b" stroke="#82aaff" stroke-width="2"/><text x="345" y="270" fill="#82aaff">0</text>
+        <circle cx="435" cy="270" r="15" fill="#18181b" stroke="#d4a017" stroke-width="2"/><text x="435" y="270" fill="#d4a017">2</text>
+      </g>
+      <path d="M 205 172 C 150 120, 190 40, 268 32" fill="none" stroke="#d4a017" stroke-width="1.8" stroke-dasharray="5 3" marker-end="url(#dbA)"/>
+      <path d="M 450 262 C 560 180, 480 30, 332 28" fill="none" stroke="#d4a017" stroke-width="1.8" stroke-dasharray="5 3" marker-end="url(#dbA)"/>
+      <path d="M 330 262 C 300 230, 330 190, 358 184" fill="none" stroke="#82aaff" stroke-width="1.8" marker-end="url(#dbB)"/>
+      <g font-family="Inter, sans-serif" font-size="12" fill="#9a9992">
+        <text x="70" y="120">x here: cross λy → 1</text>
+        <text x="470" y="140">x here: cross λz, λy → 2</text>
+        <text x="228" y="250">z: cross nothing → 0</text>
+      </g>
+    </svg>
+    <div class="caption">Both gold numbers are the same variable, x. They differ because they sit at different depths. The names in parentheses are only display hints.</div>
+  </div>
+  <a class="lab-link" data-lab="06" data-term="λx. λy. x (λz. z x)">Hover the numbers in the Lab</a><span class="lab-note"></span>
+</section>
+
+<section id="s04">
+  <h2><span class="num">04</span>The Code, Explained</h2>
+  <h3>Converting: the index is a position in the scope list</h3>
+  <p class="file-label">src/debruijn.ts</p>
+<pre><code><span class="c">// scope[0] is the INNERMOST binder, so a bound variable's index is just its position.</span>
+<span class="k">case</span> <span class="s">"var"</span>: {
+  <span class="k">const</span> i = scope.indexOf(u.name);
+  <span class="k">if</span> (i &gt;= 0) <span class="k">return</span> DVar(i);
+  <span class="k">const</span> j = ctx.indexOf(u.name);
+  <span class="k">if</span> (j &lt; 0) <span class="k">throw new</span> Error(`free variable '${u.name}' is not in the naming context [${ctx.join(<span class="s">", "</span>)}]`);
+  <span class="k">return</span> DVar(scope.length + j);
+}
+<span class="k">case</span> <span class="s">"lam"</span>: <span class="k">return</span> DLam(go(u.body, [u.param, ...scope]), u.param);</code></pre>
+  <p>Pushing the new binder at the <em>front</em> makes <code>indexOf</code> find the innermost match first. That's shadowing, for free.</p>
+
+  <h3>Shifting: move only what points outside</h3>
+<pre><code><span class="k">export function</span> shift(d: number, c: number, t: DTerm): DTerm {
+  <span class="k">switch</span> (t.kind) {
+    <span class="k">case</span> <span class="s">"var"</span>: <span class="k">return</span> t.index &gt;= c ? DVar(t.index + d) : t;
+    <span class="k">case</span> <span class="s">"lam"</span>: <span class="k">return</span> DLam(shift(d, c + 1, t.body), t.hint);
+    <span class="k">case</span> <span class="s">"app"</span>: <span class="k">return</span> DApp(shift(d, c, t.fn), shift(d, c, t.arg));
+  }
+}</code></pre>
+  <p>The cutoff <code>c</code> counts λs passed <em>inside</em> the term. An index below <code>c</code> points at one of those, so it travels with the term and must not change.
+  Demo: <code>shift(+2, 0, λ. 0 1) = λ. 0 3</code>. The bound 0 stays, and the free 1 moves.</p>
+
+  <h3>Substitution: shift the replacement under every λ</h3>
+<pre><code><span class="k">export function</span> substDB(j: number, s: DTerm, t: DTerm): DTerm {
+  <span class="k">switch</span> (t.kind) {
+    <span class="k">case</span> <span class="s">"var"</span>: <span class="k">return</span> t.index === j ? s : t;
+    <span class="k">case</span> <span class="s">"lam"</span>: <span class="k">return</span> DLam(substDB(j + 1, shift(1, 0, s), t.body), t.hint);
+    <span class="k">case</span> <span class="s">"app"</span>: <span class="k">return</span> DApp(substDB(j, s, t.fn), substDB(j, s, t.arg));
+  }
+}
+<span class="k">export function</span> substTop(body: DTerm, s: DTerm): DTerm {
+  <span class="k">return</span> shift(-1, 0, substDB(0, shift(1, 0, s), body));
+}</code></pre>
+  <div class="bullets"><div class="label">BULLET POINTS</div><ul>
+    <li>A de Bruijn index is the number of λs between a variable and its binder.</li>
+    <li>α-equivalent terms become identical nameless trees, so equality is structural.</li>
+    <li>Moving a term under a λ requires <em>shifting</em> its free indices up by one.</li>
+    <li>Forgetting that shift is capture, in numeric form.</li>
+  </ul></div>
+</section>
+
+<section id="s05">
+  <h2><span class="num">05</span>Limits: What You Cannot Do Yet</h2>
+  <div class="compare">
+    <div class="cant"><h4>Can't do yet</h4><ul>
+      <li>Read nameless terms comfortably. Humans are bad at "2 λs out," which is why named terms stay primary.</li>
+      <li>Compare terms that were converted with <em>different</em> contexts. Γ must be shared.</li>
+      <li>Reduce anything. <code>substTop</code> is the β-step's substitution, but choosing redexes starts in Module 7.</li>
+      <li>Avoid shifting cost: every substitution walks and rebuilds the argument. Environments (Module 19) and levels (Module 23) avoid it.</li>
+    </ul></div>
+    <div class="can"><h4>Can do now</h4><ul>
+      <li>Convert named ↔ nameless without losing anything (3000/3000 round trips).</li>
+      <li>Decide α-equivalence by plain structural equality.</li>
+      <li>Substitute with no fresh names, matching Module 5's results exactly.</li>
+      <li>Explain capture as a missed shift.</li>
+    </ul></div>
+  </div>
+</section>
+
+<section id="s06">
+  <h2><span class="num">06</span>Run It</h2>
+  <div class="run-box"><h4>Run the tests</h4>
+  <pre><code>cd alonzo/track1-engine/06_de_bruijn
+npm test</code></pre>
+  <div class="desc">12 new tests + 65 carried from Modules 1–5. Actual summary:</div>
+<pre><code><span class="o"># tests 77
+# pass 77
+# fail 0</span></code></pre>
+  <div class="desc">Then:</div>
+  <pre><code>npm run demo</code></pre>
+  <div class="desc">Actual output:</div>
+<pre><code><span class="o">== Named → nameless ==
+λx. x                  → λ. 0
+λx. λy. x              → λ. λ. 1
+λx. λy. y              → λ. λ. 0
+λx y z. x z (y z)      → λ. λ. λ. 2 0 (1 0)
+λx. λy. x (λz. z x)    → λ. λ. 1 λ. 0 2
+(λx. x) y              → (λ. 0) 0             Γ = [y]
+λx. x b a              → λ. 0 2 1             Γ = [a, b]
+
+== α-equivalent terms become identical ==
+λx. λy. x y  λ. λ. 1 0  | λa. λb. a b  λ. λ. 1 0  identical: true
+λx. λx. x    λ. λ. 0    | λa. λb. a    λ. λ. 1    identical: false
+
+== Back to names (hints freshened) ==
+λx. λx. 1 → λx. λx1. x
+
+== Shifting ==
+shift(+2, cutoff 0, λ. 0 1) = λ. 0 3   (the bound 0 stays; the free 1 moves)
+
+== Substitution without names: (λy. x)[x := y] ==
+body (under λx) = λ. 1   argument y = 0
+substTop        = λ. 1   → back to names: λy1. y
+without shifting= λ. 0   → back to names: λy1. y1
+
+== Round trip on random terms ==
+fromDeBruijn(toDeBruijn(t)) ≡α t for 3000/3000</span></code></pre></div>
+  <div class="callout red"><div class="label">Getting a blank or broken result?</div>
+  <ul>
+    <li><strong><code>free variable 'y' is not in the naming context</code></strong>: you passed a Γ that doesn't list every free variable. Omit it to use the default, or add the name.</li>
+    <li><strong>Two α-equivalent open terms compare unequal</strong>: each was converted with its <em>own</em> default Γ. Pass one shared context to both.</li>
+    <li><strong>"<code>(λ. 0) 0</code>: why is y zero?"</strong> At the top level there are no binders, so the first free variable in Γ is index 0 + 0. Under the λ, the same 0 means the bound variable.</li>
+  </ul></div>
+  <a class="lab-link" data-lab="06">Open Lab 06: de Bruijn Converter</a><span class="lab-note"></span>
+</section>
+
+<section id="s07">
+  <h2><span class="num">07</span>Brain Exercise</h2>
+  <div class="brain"><div class="label">Think before you reveal</div>
+  <p>Convert by hand, without the Lab:</p>
+  <pre><code>λx. λy. x (λz. z x)</code></pre>
+  <p><strong>Then answer: the variable x appears twice. Why do its two occurrences get different numbers, and what would go wrong in <code>substDB</code> if we forgot to
+  add 1 to the replacement under each λ?</strong> Check your conversion in the Lab's exercise box, which accepts <code>\</code> for λ and any extra parentheses.</p>
+  <a class="lab-link" data-lab="06">Check your answer in the Lab</a>
+  <details><summary>Reveal the answer</summary>
+  <p><code>λ. λ. 1 (λ. 0 2)</code>, which the engine prints as <code>λ. λ. 1 λ. 0 2</code> (the trailing λ needs no parentheses, same rule as Module 1).</p>
+  <ul>
+    <li>First <code>x</code>: under <code>λy</code> only, so it crosses 1 binder → <strong>1</strong>.</li>
+    <li><code>z</code>: its own binder is the nearest → <strong>0</strong>.</li>
+    <li>Second <code>x</code>: under <code>λz</code> <em>and</em> <code>λy</code>, so it crosses 2 → <strong>2</strong>.</li>
+  </ul>
+  <p>Same variable, different depths, different numbers. An index is a <em>relative</em> address. That's also why moving a term one λ deeper requires adding 1 to its free
+  indices. The "2 generations up" note must become "3 up" in the child's pocket. Skip it and the index points at a closer λ: the demo shows
+  <code>(λy. x)[x := y]</code> becoming <code>λ. 0</code>, the identity, instead of <code>λ. 1</code>. It's Module 5's capture, reproduced with arithmetic.</p></details></div>
+</section>
+
+<section id="s08">
+  <h2><span class="num">08</span>There Are No Dumb Questions</h2>
+  <div class="qa">
+    <p class="q">Who was de Bruijn, and why did he want this?</p>
+    <p class="a">Nicolaas Govert de Bruijn, a Dutch mathematician, introduced the notation in 1972 while building <strong>Automath</strong>, one of the first computer systems for checking mathematical proofs. A machine checking proofs needs α-equivalence to be trivial, and this makes it so. Track H8 rebuilds an Automath-style checker.</p>
+    <p class="q">Do real systems actually use this?</p>
+    <p class="a">Yes. Proof-assistant kernels (Coq/Rocq, Lean) represent bound variables with de Bruijn indices, and many compilers use them internally. Lean and many others use the <em>locally nameless</em> variant: indices for bound variables, names for free ones. DECISIONS.md explains why we chose pure indices here.</p>
+    <p class="q">Isn't shifting just as error-prone as fresh names?</p>
+    <p class="a">It's error-prone in a different, more testable way. A missed shift is an off-by-one that fails deterministically on small examples. Name capture can hide for a long time (Module 5's "stealth capture"). Many implementers still prefer one over the other, which is why both exist.</p>
+    <p class="q">What are de Bruijn <em>levels</em>?</p>
+    <p class="a">The mirror image: count binders from the <em>root</em> down instead of from the variable up. With levels, a variable's number doesn't change when you go deeper, but it does when you move a term to a different root. Module 23 (normalization by evaluation) uses both: indices for terms, levels for values.</p>
+    <p class="q">Why keep named terms at all, if nameless ones are so much cleaner?</p>
+    <p class="a">Because people read and write names. The usual architecture, which this course follows from here on, is: humans type named terms, the engine converts to nameless for comparisons and heavy lifting, and converts back to show results.</p>
+  </div>
+</section>
+
+<section id="s09">
+  <h2><span class="num">09</span>What's Next</h2>
+  <p>Phase 1 is complete. The engine can <strong>hold</strong> terms (Module 1), <strong>read</strong> them (Modules 2–3), understand <strong>binding</strong> (Module 4),
+  <strong>substitute</strong> safely (Module 5), and ignore <strong>names</strong> entirely when it wants to (Module 6). It still can't <em>compute</em> anything.
+  <strong>Module 7: Redex Anatomy</strong> starts Phase 2 by asking the question every evaluator must answer first: <em>where in this term can a computation step happen?</em>
+  It finds every β-redex <code>(λx. M) N</code> and η-redex <code>λx. M x</code> by path, classifies them (leftmost-outermost, innermost, head), and defines normal form precisely:
+  a term with no redexes left.</p>
+</section>
+
+<div class="module-nav">
+  <a href="../05_substitution/tutorial.html"><span class="dir">← Previous</span>Module 5: Capture-Avoiding Substitution</a>
+  <a class="next" href="../07_redexes/tutorial.html"><span class="dir">Next →</span>Module 7: Redex Anatomy</a>
+</div>
+</main>
+<footer>Alonzo · Track 1 · Module 6 · <a href="DECISIONS.md">DECISIONS.md</a> · <a href="../../GLOSSARY.md">Glossary</a></footer>
+<script src="../../shared/course.js"></script>
+</body>
+</html>

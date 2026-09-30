@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rewriting Systems</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700;800&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../shared/course.css">
+</head>
+<body style="--accent:#d4a017;--accent-rgb:245,200,66">
+<nav class="topbar"><a class="brand" href="../index.html">λ <span>Alonzo</span></a><a href="../prerequisites.html">← All prerequisites</a><span class="spacer"></span><span class="muted">P6 of 8</span></nav>
+<header class="hero">
+  <div class="badge">PREREQUISITE P6</div>
+  <h1>Rewriting <span>Systems</span></h1>
+  <p class="tagline">In the λ-calculus there is no CPU and no memory. Computation is <em>rewriting</em>: find a pattern, replace it, repeat.</p>
+</header>
+<main class="container">
+
+<section id="rewrite">
+  <h2><span class="num">P6.1</span>Computation as find-and-replace</h2>
+  <p>You already know a rewriting system: school arithmetic. To evaluate <code>(2 + 3) * 4</code>, you find a piece you know how
+  to simplify (<code>2 + 3</code>), replace it with <code>5</code>, and repeat: <code>5 * 4</code> → <code>20</code>. Each rule has a
+  left side (the pattern) and a right side (the replacement). The piece that matches a rule's left side is called a
+  <strong>redex</strong> (<em>red</em>ucible <em>ex</em>pression).</p>
+  <div class="analogy"><div class="big">A rewriting system is a word puzzle with a rule card.</div>
+  <p>The card says things like "anywhere you see AB, you may write C instead." You look for any AB in the current word,
+  replace it, and continue. The card is the whole machine. There is no hidden state.</p></div>
+</section>
+
+<section id="normal-form">
+  <h2><span class="num">P6.2</span>Normal forms: where rewriting stops</h2>
+  <p>A term with no redex left is in <strong>normal form</strong>. You can't rewrite it any further, so it's the "answer." In
+  arithmetic, <code>20</code> is a normal form. In the λ-calculus, <code>λx. x</code> is one.</p>
+</section>
+
+<section id="choice">
+  <h2><span class="num">P6.3</span>Choice: which redex first?</h2>
+  <p><code>(2 + 3) * (4 + 1)</code> has two redexes. You can do either first. Rewriting is <strong>non-deterministic</strong>: at each
+  step you may have several options. A rule for picking one is called a <strong>strategy</strong>. Two questions immediately
+  arise:</p>
+  <ul>
+    <li><strong>Termination</strong>: does every sequence of choices eventually stop? (Not always. In the λ-calculus, some choices loop forever while others finish. That's Module 9.)</li>
+    <li><strong>Confluence</strong>: if two different choices both reach a normal form, is it the <em>same</em> normal form? A system with this property is called <em>confluent</em> (or <em>Church–Rosser</em>). Module 10 checks it empirically.</li>
+  </ul>
+  <div class="diagram"><div class="tree">            (2+3)*(4+1)
+           ↙           ↘
+     5*(4+1)          (2+3)*5
+           ↘           ↙
+               5*5
+                ↓
+                25</div><div class="caption">The "diamond": two different first steps, rejoining later. Confluence says this always happens.</div></div>
+</section>
+
+<section id="relations">
+  <h2><span class="num">P6.4</span>Arrow notation</h2>
+  <div class="table-wrap"><table class="data">
+    <tr><th>Notation</th><th>Meaning</th></tr>
+    <tr><td><code>M → N</code></td><td>M rewrites to N in exactly <strong>one</strong> step</td></tr>
+    <tr><td><code>M →* N</code> (also <code>M ↠ N</code>)</td><td>M rewrites to N in <strong>zero or more</strong> steps</td></tr>
+    <tr><td><code>M = N</code></td><td>M and N are connected by steps in <strong>either direction</strong> (conversion / equivalence)</td></tr>
+  </table></div>
+  <p>Subscripts say which rule: <code>→β</code> uses the β-rule, and <code>→η</code> the η-rule.</p>
+</section>
+
+<section id="in-this-course">
+  <h2><span class="num">P6.5</span>Where this shows up</h2>
+  <ul>
+    <li><strong>Module 7</strong>: finding every redex in a term.</li>
+    <li><strong>Module 8</strong>: β-contraction, the λ-calculus's only computation rule.</li>
+    <li><strong>Modules 9–11</strong>: strategies, termination, confluence, normal forms.</li>
+    <li><strong>Module 32</strong>: turning substitution itself into rewrite rules.</li>
+  </ul>
+</section>
+<div class="module-nav"><a href="p5_structural_induction.html"><span class="dir">← Previous</span>P5 Structural Induction</a><a class="next" href="p7_inference_rules.html"><span class="dir">Next →</span>P7 Inference-Rule Notation</a></div>
+</main>
+<footer>Alonzo · Prerequisite P6</footer>
+</body>
+</html>

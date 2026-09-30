@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grammars & BNF</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700;800&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../shared/course.css">
+</head>
+<body style="--accent:#d4a017;--accent-rgb:245,200,66">
+<nav class="topbar"><a class="brand" href="../index.html">λ <span>Alonzo</span></a><a href="../prerequisites.html">← All prerequisites</a><span class="spacer"></span><span class="muted">P4 of 8</span></nav>
+<header class="hero">
+  <div class="badge">PREREQUISITE P4</div>
+  <h1>Grammars &amp; <span>BNF</span></h1>
+  <p class="tagline">A grammar is a small set of rules that says exactly which strings are programs. The whole λ-calculus fits in one line.</p>
+</header>
+<main class="container">
+
+<section id="bnf">
+  <h2><span class="num">P4.1</span>BNF in one minute</h2>
+  <p><strong>Backus–Naur Form</strong> (BNF), first used for ALGOL 60, writes a language as rules of the form
+  <code>name ::= alternative | alternative | …</code>. Here is the <em>entire</em> syntax of the λ-calculus:</p>
+  <pre><code>M, N ::= x          <span class="c">variable</span>
+       | λx. M      <span class="c">abstraction</span>
+       | M N        <span class="c">application</span></code></pre>
+  <p>Read it as: "a term (call it <code>M</code> or <code>N</code>) is either a variable, or <code>λ</code>, a variable, a dot and a term, or two terms side by side."
+  The rule refers to itself. That's what lets terms nest to any depth.</p>
+  <p>Notice this grammar has one alternative per AST node kind (<a href="p3_trees_and_recursion.html#ast">P3.2</a>).
+  That's not a coincidence. A grammar like this, with no precedence information, is called an <strong>abstract grammar</strong>.
+  It describes trees, not strings.</p>
+</section>
+
+<section id="ambiguity">
+  <h2><span class="num">P4.2</span>The abstract grammar is ambiguous as text</h2>
+  <p>As a description of <em>strings</em>, the rule above is ambiguous. <code>x y z</code> could be <code>(x y) z</code> or <code>x (y z)</code>.
+  <code>λx. x y</code> could be <code>(λx. x) y</code> or <code>λx. (x y)</code>. Different trees mean different programs, so a real parser
+  needs tie-breaking conventions.</p>
+</section>
+
+<section id="assoc-precedence">
+  <h2><span class="num">P4.3</span>The two conventions that resolve it</h2>
+  <p>Every λ-calculus text (Church, Barendregt, Pierce's <em>TAPL</em>) uses the same two conventions:</p>
+  <ol>
+    <li><strong>Application is left-associative.</strong> <code>x y z</code> means <code>(x y) z</code>. This follows from currying (<a href="p1_functions_as_mappings.html#currying">P1.4</a>).</li>
+    <li><strong>The body of a λ extends as far right as possible.</strong> <code>λx. x y</code> means <code>λx. (x y)</code>. You close a λ early only by wrapping it in parentheses: <code>(λx. x) y</code>.</li>
+  </ol>
+  <p>A <strong>concrete grammar</strong> bakes those conventions in by splitting terms into layers:</p>
+  <pre><code>term    ::= "λ" ident+ "." term           <span class="c">← λ grabs everything to its right</span>
+          | application
+application ::= atom atom*               <span class="c">← a row of atoms, grouped from the left</span>
+atom    ::= ident | "(" term ")"</code></pre>
+  <p>Module 3's parser is a direct transcription of this grammar: one function per rule.</p>
+</section>
+
+<section id="tokens">
+  <h2><span class="num">P4.4</span>Characters → tokens → tree</h2>
+  <p>Parsing usually happens in two passes. A <strong>lexer</strong> groups characters into <strong>tokens</strong> (identifiers,
+  <code>λ</code>, <code>.</code>, <code>(</code>, <code>)</code>) and throws away whitespace. Then a <strong>parser</strong> arranges
+  tokens into a tree using the grammar. Module 2 is the lexer, and Module 3 is the parser.</p>
+  <pre><code>"λx. x y"  ──lexer──▶  [LAMBDA, IDENT x, DOT, IDENT x, IDENT y, EOF]  ──parser──▶  λx.(x y)</code></pre>
+</section>
+
+<section id="in-this-course">
+  <h2><span class="num">P4.5</span>Where this shows up</h2>
+  <ul>
+    <li><strong>Module 1</strong>: the printer must add parentheses exactly where P4.3's conventions would otherwise misread the tree.</li>
+    <li><strong>Module 2</strong>: the token set.</li>
+    <li><strong>Module 3</strong>: the concrete grammar as a recursive-descent parser.</li>
+    <li><strong>Track 2 C1</strong>: a bigger grammar for Alonzo-ML.</li>
+  </ul>
+  <p>For far more depth (DFAs, LL(1), LR), see the sibling course <code>bob_compiler/a-finity/everything_parsing</code>.</p>
+</section>
+<div class="module-nav"><a href="p3_trees_and_recursion.html"><span class="dir">← Previous</span>P3 Trees &amp; Recursion</a><a class="next" href="p5_structural_induction.html"><span class="dir">Next →</span>P5 Structural Induction</a></div>
+</main>
+<footer>Alonzo · Prerequisite P4</footer>
+</body>
+</html>

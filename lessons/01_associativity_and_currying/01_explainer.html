@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Associativity & Currying</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700;800&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../shared/course.css">
+</head>
+<body>
+<nav class="topbar"><a class="brand" href="../../index.html">λ <span>Alonzo</span></a><a href="../README.md">Lessons</a><a href="02_deepdive_left_vs_right_in_parsers.html">Deep dive 1</a><a href="03_deepdive_currying_and_the_arrow.html">Deep dive 2</a><a href="04_deepdive_real_languages_and_bugs.html">Deep dive 3</a><span class="spacer"></span><span class="muted">Lesson cluster 01 · explainer</span></nav>
+
+<header class="hero">
+  <div class="badge">LESSON CLUSTER 01</div>
+  <h1>Associativity &amp; <span>Currying</span></h1>
+  <p class="tagline">Why <code>f a b</code> means <code>(f a) b</code>, why <code>λx. x y</code> swallows the <code>y</code>, and why the type <code>A → B → C</code> groups the <em>other</em> way. One idea (functions take one argument) seen from three directions.</p>
+  <div class="hero-grid">
+    <div class="hero-stat"><div class="num">left</div><div class="label">application: f a b = (f a) b</div></div>
+    <div class="hero-stat"><div class="num">right</div><div class="label">λ-bodies and → types</div></div>
+    <div class="hero-stat"><div class="num">4</div><div class="label">modules it spans</div></div>
+  </div>
+</header>
+
+<main class="container">
+
+<section id="s00">
+  <h2><span class="num">00</span>Prerequisites</h2>
+  <div class="prereq-bar">
+    <a class="tag" href="../../prerequisites/p1_functions_as_mappings.html#currying">P1.4 currying</a>
+    <a class="tag" href="../../prerequisites/p4_grammars_and_bnf.html#ambiguity">P4.2 ambiguity</a>
+    <a class="tag" href="../../prerequisites/p4_grammars_and_bnf.html#assoc-precedence">P4.3 the two conventions</a>
+  </div>
+  <p>Where this lives in the modules: the printer (<a href="../../track1-engine/01_term_ast/tutorial.html#s04">Module 1</a>), the parser (<a href="../../track1-engine/03_parser/tutorial.html">Module 3</a>), function types (Module 24), and Alonzo-ML's operators (Track 2, C1).
+  None of them owns the idea, which is why it lives here.</p>
+</section>
+
+<section id="s01">
+  <h2><span class="num">01</span>The Big Analogy</h2>
+  <div class="analogy">
+    <div class="big">Associativity is the rule for who holds hands first in a line of people.</div>
+    <p>Line up <code>a − b − c</code>. If everyone links arms <strong>from the left</strong>, <code>a</code> and <code>b</code> pair up first and then the pair grabs <code>c</code>: <code>(a − b) − c</code>. Linking <strong>from the right</strong>
+    pairs <code>b</code> and <code>c</code> first: <code>a − (b − c)</code>. Same people, different groups, different answers (10−4−3 is 3 one way and 9 the other).</p>
+    <p>For <em>addition</em>, it doesn't matter who links first: (a+b)+c = a+(b+c). That property is <strong>associativity</strong> in the algebraic sense. For operators where it <em>does</em> matter, a language must
+    pick a side, and the choice is called the operator's <strong>associativity</strong> in the parsing sense: left-associative or right-associative.</p>
+  </div>
+  <div class="callout gold"><div class="label">Two meanings of one word</div>
+  <p><strong>Algebraic:</strong> an operation is associative if grouping never changes the result (+, ×, function composition). <strong>Parsing:</strong> an operator is left- or right-<em>associative</em>
+  if, by convention, an ungrouped chain groups from that side. The second is needed exactly when the first fails.</p></div>
+</section>
+
+<section id="s02">
+  <h2><span class="num">02</span>The Three Conventions of the λ-Calculus</h2>
+  <ol class="steps">
+    <li><strong>Application is left-associative.</strong> <code>f a b c</code> = <code>((f a) b) c</code>. Every function takes <em>one</em> argument and may return a function, so the leftmost application happens first. That's currying.</li>
+    <li><strong>A λ-body extends as far right as possible.</strong> <code>λx. x y</code> = <code>λx. (x y)</code>, and <code>λx. λy. M</code> = <code>λx. (λy. M)</code>. Binders nest to the right.</li>
+    <li><strong>Function types are right-associative</strong> (from Module 24). <code>A → B → C</code> = <code>A → (B → C)</code>: "takes an A, returns a function from B to C". It's the mirror of rule 1.</li>
+  </ol>
+  <p>Rules 1 and 3 must point in <em>opposite</em> directions, or currying stops lining up. Deep dive 2 shows why.</p>
+</section>
+
+<section id="s03">
+  <h2><span class="num">03</span>The Map: What the Engine Actually Does</h2>
+  <p>Real output from the Module 13 engine: parse, then print fully parenthesized (<code>printFull</code>) and minimally (<code>print</code>):</p>
+<pre><code><span class="o">f a b c            → (((f a) b) c)                 print: f a b c
+f (a b) c          → ((f (a b)) c)                 print: f (a b) c
+λx. λy. x y        → (λx. (λy. (x y)))             print: λx. λy. x y
+λx y. x y z        → (λx. (λy. ((x y) z)))         print: λx. λy. x y z
+(f a) b            → ((f a) b)                     print: f a b
+f a (b c)          → ((f a) (b c))                 print: f a (b c)</span></code></pre>
+  <div class="diagram">
+    <svg viewBox="0 0 620 220" width="620" role="img" aria-label="Left-leaning application tree vs right-leaning lambda nesting">
+      <g stroke="#3a3a3f" stroke-width="2">
+        <line x1="150" y1="30" x2="110" y2="80"/><line x1="150" y1="30" x2="190" y2="80"/>
+        <line x1="110" y1="80" x2="70" y2="130"/><line x1="110" y1="80" x2="150" y2="130"/>
+        <line x1="70" y1="130" x2="40" y2="180"/><line x1="70" y1="130" x2="100" y2="180"/>
+        <line x1="450" y1="30" x2="450" y2="80"/><line x1="450" y1="80" x2="450" y2="130"/><line x1="450" y1="130" x2="410" y2="180"/><line x1="450" y1="130" x2="490" y2="180"/>
+      </g>
+      <g font-family="JetBrains Mono, monospace" font-size="15" text-anchor="middle" dominant-baseline="central">
+        <circle cx="150" cy="30" r="15" fill="#18181b" stroke="#c792ea" stroke-width="2"/><text x="150" y="30" fill="#c792ea">@</text>
+        <circle cx="110" cy="80" r="15" fill="#18181b" stroke="#c792ea" stroke-width="2"/><text x="110" y="80" fill="#c792ea">@</text>
+        <circle cx="70" cy="130" r="15" fill="#18181b" stroke="#c792ea" stroke-width="2"/><text x="70" y="130" fill="#c792ea">@</text>
+        <text x="40" y="180" fill="#82aaff">f</text><text x="100" y="180" fill="#82aaff">a</text><text x="150" y="130" fill="#82aaff">b</text><text x="190" y="80" fill="#82aaff">c</text>
+        <rect x="425" y="16" width="50" height="28" rx="14" fill="#18181b" stroke="#d4a017" stroke-width="2"/><text x="450" y="30" fill="#d4a017">λx</text>
+        <rect x="425" y="66" width="50" height="28" rx="14" fill="#18181b" stroke="#d4a017" stroke-width="2"/><text x="450" y="80" fill="#d4a017">λy</text>
+        <circle cx="450" cy="130" r="15" fill="#18181b" stroke="#c792ea" stroke-width="2"/><text x="450" y="130" fill="#c792ea">@</text>
+        <text x="410" y="180" fill="#82aaff">x</text><text x="490" y="180" fill="#82aaff">y</text>
+      </g>
+      <g font-family="Inter, sans-serif" font-size="13" fill="#9a9992"><text x="40" y="210">f a b c: the tree leans LEFT</text><text x="370" y="210">λx. λy. x y: binders nest RIGHT</text></g>
+    </svg>
+    <div class="caption">Left-associative application makes left-leaning trees. Right-extending λs make right-leaning chains.</div>
+  </div>
+</section>
+
+<section id="s04">
+  <h2><span class="num">04</span>The Code, Explained</h2>
+  <h3>Left-associativity in the parser: a loop, not left recursion</h3>
+  <p class="file-label">track1-engine/03_parser/src/parser.ts</p>
+<pre><code><span class="k">let</span> acc = parseItem();
+<span class="k">while</span> (startsItem(peek().kind)) acc = App(acc, parseItem());   <span class="c">// ((f a) b) c</span></code></pre>
+  <h3>Right-extension in the parser: the body is a whole term</h3>
+<pre><code><span class="k">const</span> body = parseTerm();                                   <span class="c">// eats everything to the right</span>
+<span class="k">return</span> params.reduceRight((b, p) =&gt; Lam(p, b), body);       <span class="c">// λx y. M → λx. (λy. M)</span></code></pre>
+  <h3>And in the printer: parentheses exactly where a convention would regroup</h3>
+<pre><code><span class="k">const</span> arg = t.arg.kind === <span class="s">"app"</span> ? `(${go(t.arg, <span class="k">true</span>)})` : go(t.arg, trailing);   <span class="c">// f (a b), not f a b</span></code></pre>
+  <p><code>reduceLeft</code> builds left-leaning trees and <code>reduceRight</code> builds right-leaning ones. Look for which fold a parser uses, and you've found the associativity.</p>
+</section>
+
+<section id="s05">
+  <h2><span class="num">05</span>Limits of This Page</h2>
+  <div class="compare">
+    <div class="cant"><h4>Not covered here</h4><ul>
+      <li>Full operator-precedence parsing (Pratt, precedence climbing): see the sibling course <code>a-finity/everything_parsing</code>.</li>
+      <li>Function types in detail (Module 24).</li>
+    </ul></div>
+    <div class="can"><h4>Covered in the deep dives</h4><ul>
+      <li><a href="02_deepdive_left_vs_right_in_parsers.html">How parsers implement left vs right</a></li>
+      <li><a href="03_deepdive_currying_and_the_arrow.html">Why application and → must point opposite ways</a></li>
+      <li><a href="04_deepdive_real_languages_and_bugs.html">Real languages and real bugs</a></li>
+    </ul></div>
+  </div>
+</section>
+
+<section id="s06">
+  <h2><span class="num">06</span>Try It</h2>
+  <div class="run-box"><h4>In the REPL (Module 12 or later)</h4>
+  <pre><code>cd alonzo/track1-engine/13_booleans_pairs
+npm run repl</code></pre>
+  <div class="desc">then type <code>:expand K a b</code> and <code>K (a b)</code>, and compare where the arguments go.</div></div>
+  <a class="lab-link" data-lab="03" data-term="f (λx. x) g">Paren explorer (Lab 03)</a><a class="lab-link" data-lab="01">Term builder (Lab 01)</a><span class="lab-note"></span>
+</section>
+
+<section id="s07">
+  <h2><span class="num">07</span>Brain Exercise</h2>
+  <div class="brain"><div class="label">Think before you reveal</div>
+  <p>Suppose a λ-calculus dialect made application <strong>right</strong>-associative, so <code>f a b</code> meant <code>f (a b)</code>. <strong>How would you then write "apply the curried two-argument function f to a and b"? And what
+  would happen to the readability of <code>S = λx y z. x z (y z)</code>?</strong></p>
+  <details><summary>Reveal the answer</summary>
+  <p>You'd have to write <code>(f a) b</code> every single time, which is the most common thing curried code does. Meanwhile the rare "apply to the result of an application" would get the short form.
+  <code>S</code>'s body <code>x z (y z)</code> would need to become <code>((x z) (y z))</code>. Left-associativity isn't arbitrary. It makes the <em>common</em> case, multi-argument calls, need no parentheses. That same
+  reasoning makes <code>→</code> right-associative: the common type "curried function of two arguments" is <code>A → B → C</code> with no parentheses.</p></details></div>
+</section>
+
+<section id="s08">
+  <h2><span class="num">08</span>There Are No Dumb Questions</h2>
+  <div class="qa">
+    <p class="q">Is function composition left- or right-associative?</p>
+    <p class="a">Algebraically it's <em>associative</em>: (f∘g)∘h = f∘(g∘h), so grouping never changes the meaning. Languages still pick a parsing convention for chains. Haskell's <code>.</code> is declared right-associative.</p>
+    <p class="q">Is associativity the same as precedence?</p>
+    <p class="a">No. Precedence decides between <em>different</em> operators (<code>a + b * c</code>). Associativity decides within a chain of the <em>same</em> operator (<code>a - b - c</code>). In the λ-calculus, "application binds tighter than λ" is the precedence rule, and "application is left-assoc" is the associativity rule.</p>
+    <p class="q">Why does the tree for <code>f a b c</code> lean left?</p>
+    <p class="a">Because the first thing to happen is <code>f a</code>, which becomes the function part of the next application. The deepest node is the first computation.</p>
+  </div>
+</section>
+
+<section id="s09">
+  <h2><span class="num">09</span>Where Next</h2>
+  <p>Read <a href="02_deepdive_left_vs_right_in_parsers.html">Deep dive 1</a> to see why recursive-descent parsers can do right-association directly but need a loop for left-association.
+  Then <a href="03_deepdive_currying_and_the_arrow.html">Deep dive 2</a> connects all of this to types, and <a href="04_deepdive_real_languages_and_bugs.html">Deep dive 3</a> tours what JavaScript, Python, C and Haskell actually do.</p>
+</section>
+
+<div class="module-nav">
+  <a href="../README.md"><span class="dir">← All lessons</span>Lesson clusters</a>
+  <a class="next" href="02_deepdive_left_vs_right_in_parsers.html"><span class="dir">Next →</span>Deep dive: left vs right in parsers</a>
+</div>
+</main>
+<footer>Alonzo · Lesson cluster 01 · Associativity &amp; Currying</footer>
+<script src="../../shared/course.js"></script>
+</body>
+</html>

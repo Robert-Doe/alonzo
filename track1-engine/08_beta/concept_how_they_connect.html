@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Step Vocabulary Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700;800&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../shared/course.css">
+<style>
+  .defgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin: 20px 0; }
+  .defgrid a { display: block; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; text-decoration: none; color: var(--text); }
+  .defgrid a:hover { border-color: var(--brand); }
+  .defgrid .t { font-family: var(--display); font-weight: 800; color: var(--brand); font-size: 1.1rem; }
+  .quiz-row { display: grid; grid-template-columns: 1fr 190px; gap: 10px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .quiz-row select { font: 14px var(--body); background: var(--bg-elevated); color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 5px; }
+  .quiz-row .res { grid-column: 1 / -1; font-size: 14px; }
+  button.check { background: var(--brand); color: #1a1305; border: 0; border-radius: 8px; padding: 9px 18px; font: 600 14px var(--body); cursor: pointer; margin-top: 14px; }
+  @media (max-width: 560px) { .quiz-row { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<nav class="topbar"><a class="brand" href="../../index.html">λ <span>Alonzo</span></a><a href="concept_how_they_connect.html">Vocabulary hub</a><a href="tutorial.html">Module 8 tutorial</a><span class="spacer"></span><span class="muted">Vocabulary web · hub</span></nav>
+<header class="hero">
+  <div class="badge">VOCABULARY HUB</div>
+  <h1>Redex · Contractum · Context · <span>Reduct</span></h1>
+  <p class="tagline">Four words for the four pieces of one computation step, placed side by side and on one picture, with the mix-ups named and corrected.</p>
+</header>
+<main class="container">
+<section><h2>Definitions, side by side</h2>
+<div class="defgrid">
+  <a href="concept_redex.html"><div class="t">Redex</div><div>The sub-term about to be rewritten: a rule's left side, found somewhere inside a term.</div></a>
+  <a href="concept_contractum.html"><div class="t">Contractum</div><div>What a redex turns into: the rule's right side, e.g. M[x := N] for β.</div></a>
+  <a href="concept_context.html"><div class="t">Context</div><div>The whole term with a hole where the redex sits. It records where the step happens.</div></a>
+  <a href="concept_reduct.html"><div class="t">Reduct</div><div>The whole term after the step: the context with the contractum plugged into its hole.</div></a>
+</div></section>
+<section><h2>One picture: where each term lives</h2>
+<div class="diagram"><svg viewBox="0 0 660 200" width="660" role="img" aria-label="Context, redex, contractum, reduct"><defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#d4a017"/></marker></defs><g font-family="JetBrains Mono, monospace" font-size="18"><text x="20" y="50" fill="#eeece6" xml:space="preserve">(λx. x x) (<tspan fill="#d4a017">(λy. y) z</tspan>)</text><text x="20" y="160" fill="#eeece6" xml:space="preserve">(λx. x x) <tspan fill="#4ade80">z</tspan></text><text x="420" y="50" fill="#eeece6" xml:space="preserve">(λx. x x) <tspan fill="#82aaff">□</tspan></text></g><path d="M 180 62 L 180 138" stroke="#d4a017" stroke-width="2" marker-end="url(#ar)"/><g font-family="Inter, sans-serif" font-size="13"><text x="20" y="22" fill="#9a9992">the whole term = C[redex]; the gold part is the redex</text><text x="190" y="105" fill="#9a9992">contract (β)</text><text x="20" y="188" fill="#4ade80">contractum z, plugged into the hole = the reduct</text><text x="420" y="80" fill="#82aaff">the context C[□]:</text><text x="420" y="98" fill="#9a9992">everything except the redex</text></g></svg><div class="caption">One step: <code>C[redex] → C[contractum]</code>, and the result is the reduct.</div></div></section>
+<section><h2>Commonly confused pairs</h2><div class="table-wrap"><table class="data">
+<tr><th>Pair</th><th>The wrong statement</th><th>The correction</th></tr>
+<tr><td>contractum vs reduct</td><td>"The contractum is the new term."</td><td>The contractum replaces only the redex (<code>z</code>). The reduct is the whole new term (<code>(λx. x x) z</code>).</td></tr>
+<tr><td>redex vs term</td><td>"This term is a redex, so it reduces."</td><td>A term can <em>contain</em> redexes without being one: <code>f ((λx. x) y)</code>.</td></tr>
+<tr><td>context vs substitution</td><td>"Plugging a hole avoids capture, like substitution."</td><td>Plugging must capture: <code>λx. □</code> filled with <code>x</code> is <code>λx. x</code>.</td></tr>
+<tr><td>reduct vs normal form</td><td>"The reduct is the answer."</td><td>A reduct is one step on. The normal form is the reduct (if any) with no redexes left.</td></tr>
+</table></div></section>
+<section><h2>Scenario quiz: which term fits?</h2><div id="quiz"></div><button class="check" id="check">Check answers</button><p id="score" class="muted"></p></section>
+<div class="module-nav"><a href="tutorial.html"><span class="dir">← Back to</span>Module 8 tutorial</a><a class="next" href="concept_redex.html"><span class="dir">Start the tour →</span>Redex</a></div>
+</main>
+<footer>Alonzo · Module 8 vocabulary web</footer>
+<script>
+(function () {
+  var O = ["Redex", "Contractum", "Context", "Reduct"];
+  var Q = [["In one step of <code>(λa. a a) b</code>, the part <code>(λa. a a) b</code>.", "Redex", "It matches (λx. M) N. Here the redex happens to be the whole term."], ["For that step, the local result <code>b b</code>.", "Contractum", "The rule's right side. Since the context is just □, the reduct is also b b."], ["For a step inside <code>λq. (λa. a) q</code>, the thing written <code>λq. □</code>.", "Context", "Everything except the redex, with a hole."], ["For that same step, the whole result <code>λq. q</code>.", "Reduct", "The context with the contractum q plugged in."], ["In <code>f ((λx. x) y) → f y</code>, the <code>y</code> that replaced <code>(λx. x) y</code>.", "Contractum", "Just the local replacement."], ["In <code>f ((λx. x) y) → f y</code>, the whole <code>f y</code>.", "Reduct", "The new term."]];
+  var box = document.getElementById("quiz");
+  var rows = Q.map(function (q, i) {
+    var row = document.createElement("div"); row.className = "quiz-row";
+    var p = document.createElement("div"); p.innerHTML = (i + 1) + ". " + q[0];
+    var s = document.createElement("select");
+    s.innerHTML = '<option value="">choose…</option>' + O.map(function (o) { return "<option>" + o + "</option>"; }).join("");
+    var res = document.createElement("div"); res.className = "res";
+    row.appendChild(p); row.appendChild(s); row.appendChild(res); box.appendChild(row);
+    return { s: s, res: res, q: q };
+  });
+  document.getElementById("check").addEventListener("click", function () {
+    var right = 0;
+    rows.forEach(function (x) {
+      var ok = x.s.value === x.q[1]; if (ok) right++;
+      x.res.innerHTML = (ok ? '<span style="color:var(--green)">✓ ' : '<span style="color:var(--red)">✗ Answer: <b>' + x.q[1] + '</b>. ') + x.q[2] + '</span>';
+    });
+    document.getElementById("score").textContent = right + " / " + Q.length + " correct";
+  });
+})();
+</script>
+</body>
+</html>

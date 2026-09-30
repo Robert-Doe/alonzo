@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reduction Graphs & Church–Rosser</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700;800&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../shared/course.css">
+</head>
+<body>
+<nav class="topbar"><a class="brand" href="../../index.html">λ <span>Alonzo</span></a><a href="../../prerequisites.html">Prerequisites</a><a href="../../GLOSSARY.md">Glossary</a><a href="DECISIONS.md">Decisions</a><span class="spacer"></span><span class="muted">Track 1 · Phase 2 · Module 10 of 34</span></nav>
+
+<header class="hero">
+  <div class="badge">MODULE 10</div>
+  <h1>Reduction Graphs, Residuals &amp; <span>Church–Rosser</span></h1>
+  <p class="tagline">Stop choosing and draw <em>every</em> path at once. The λ-calculus's most important theorem becomes a picture you can check: however paths fork, they can always meet again.</p>
+  <div class="hero-grid">
+    <div class="hero-stat"><div class="num">3726/3726</div><div class="label">forks rejoined</div></div>
+    <div class="hero-stat"><div class="num">0</div><div class="label">terms with two normal forms</div></div>
+    <div class="hero-stat"><div class="num">121/121</div><div class="label">tests passing</div></div>
+  </div>
+</header>
+
+<main class="container">
+
+<section id="s00">
+  <h2><span class="num">00</span>Prerequisites</h2>
+  <div class="prereq-bar">
+    <a class="tag" href="../../prerequisites/p6_rewriting_systems.html#choice">P6.3 confluence (the diamond)</a>
+    <a class="tag" href="../../prerequisites/p6_rewriting_systems.html#relations">P6.4 →, →*</a>
+    <a class="tag" href="../../prerequisites/p5_structural_induction.html#dominoes">P5.1 induction</a>
+  </div>
+  <p>From the course: <a href="../06_de_bruijn/tutorial.html">de Bruijn keys</a> (Module 6) merge α-equivalent nodes, <a href="../08_beta/tutorial.html">one-step reducts</a> (Module 8) are the edges, and <a href="../09_strategies/tutorial.html">Module 9</a> showed that strategies which finish agree, which is what this module explains.</p>
+</section>
+
+<section id="s01">
+  <h2><span class="num">01</span>The Big Analogy</h2>
+  <div class="analogy">
+    <div class="big">A term's reduction graph is a city map where every street leads downhill toward one valley.</div>
+    <p>Each intersection is a term. Each one-way street is a single β-step. At most intersections you can take several streets, and different drivers take different routes.
+    Church–Rosser is the city planner's guarantee: <strong>whenever two drivers split up, there is always somewhere further down where they can meet again</strong>.</p>
+    <p>So if there <em>is</em> a valley floor (a normal form), there's only one, and no turn you take can ever cut you off from it. Some streets loop back uphill forever (Ω), so you can
+    <em>fail to arrive</em> by driving in circles, but you can never be stranded.</p>
+  </div>
+  <p>Residuals are the other half: when one driver clears a roadblock (fires redex S), what happens to another roadblock R? It might be <strong>copied</strong> (now there are two), <strong>erased</strong>, or <strong>kept</strong>, possibly changed.</p>
+</section>
+
+<section id="s02">
+  <h2><span class="num">02</span>What Happens, Step by Step</h2>
+  <ol class="steps">
+    <li><code>reductionGraph(t)</code> starts a breadth-first search from <code>t</code>.</li>
+    <li>For each node, every β-redex gives one outgoing edge (Module 8's <code>stepAt</code>), labelled by the redex's path.</li>
+    <li>Each new term gets an α-invariant key (its de Bruijn printout). Terms with a known key reuse the existing node, which is how loops become self-edges.</li>
+    <li>Limits on node count and term size stop infinite graphs, and set <code>truncated</code>.</li>
+    <li><code>confluenceReport</code> computes reachability, then checks every fork: do the two branches reach a common node?</li>
+    <li><code>residuals(t, S, R)</code> marks R's λ, fires S, and finds the marked copies.</li>
+    <li><code>develop(t)</code> contracts all of <code>t</code>'s original redexes inside-out: Takahashi's <code>M*</code>.</li>
+  </ol>
+</section>
+
+<section id="s03">
+  <h2><span class="num">03</span>The Map: One Complete Reduction Graph</h2>
+  <p>Real demo output for <code>(λx. x x) ((λy. y) z)</code>, drawn:</p>
+  <div class="diagram">
+    <svg viewBox="0 0 640 270" width="640" role="img" aria-label="Reduction graph with two forks rejoining">
+      <defs><marker id="g10" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#9a9992"/></marker></defs>
+      <g stroke="#5c5c58" stroke-width="1.6" marker-end="url(#g10)">
+        <line x1="300" y1="44" x2="170" y2="96"/><line x1="340" y1="44" x2="470" y2="96"/>
+        <line x1="130" y1="124" x2="90" y2="176"/><line x1="190" y1="124" x2="290" y2="176"/>
+        <line x1="470" y1="124" x2="345" y2="226"/>
+        <line x1="90" y1="204" x2="300" y2="228"/><line x1="300" y1="204" x2="318" y2="224"/>
+      </g>
+      <g font-family="JetBrains Mono, monospace" font-size="12" text-anchor="middle">
+        <rect x="200" y="16" width="240" height="28" rx="8" fill="#18181b" stroke="#d4a017" stroke-width="2"/><text x="320" y="35" fill="#eeece6">#0 (λx. x x) ((λy. y) z)</text>
+        <rect x="40" y="96" width="250" height="28" rx="8" fill="#18181b" stroke="#5c5c58"/><text x="165" y="115" fill="#eeece6">#1 (λy. y) z ((λy. y) z)</text>
+        <rect x="400" y="96" width="150" height="28" rx="8" fill="#18181b" stroke="#5c5c58"/><text x="475" y="115" fill="#eeece6">#2 (λx. x x) z</text>
+        <rect x="10" y="176" width="160" height="28" rx="8" fill="#18181b" stroke="#5c5c58"/><text x="90" y="195" fill="#eeece6">#3 z ((λy. y) z)</text>
+        <rect x="220" y="176" width="160" height="28" rx="8" fill="#18181b" stroke="#5c5c58"/><text x="300" y="195" fill="#eeece6">#4 (λy. y) z z</text>
+        <rect x="290" y="226" width="80" height="28" rx="8" fill="#18181b" stroke="#4ade80" stroke-width="2"/><text x="330" y="245" fill="#4ade80">#5 z z</text>
+      </g>
+      <g font-family="JetBrains Mono, monospace" font-size="10" fill="#9a9992">
+        <text x="222" y="66">ε</text><text x="412" y="66">arg</text><text x="96" y="150">fn</text><text x="244" y="150">arg</text><text x="416" y="176">ε</text><text x="180" y="226">arg</text><text x="316" y="216">fn</text>
+      </g>
+    </svg>
+    <div class="caption">Two forks (at #0 and #1). Both rejoin, and every path ends at the single normal form <code>z z</code>. Shortest path: 2 steps (via #2). Longest: 3.</div>
+  </div>
+  <a class="lab-link" data-lab="10" data-term="(λx. x x) ((λy. y) z)">Explore the live graph in the Lab</a><span class="lab-note"></span>
+</section>
+
+<section id="s04">
+  <h2><span class="num">04</span>The Code, Explained</h2>
+  <h3>BFS with α-merging</h3>
+  <p class="file-label">src/graph.ts</p>
+<pre><code><span class="k">export const</span> alphaKey = (t: Term, ctx: string[]): string =&gt; printDB(toDeBruijn(t, ctx));
+<span class="c">// …</span>
+<span class="k">for</span> (<span class="k">let</span> i = 0; i &lt; nodes.length; i++) {
+  <span class="k">const</span> n = nodes[i];
+  <span class="k">for</span> (<span class="k">const</span> r <span class="k">of</span> findRedexes(n.term)) {
+    <span class="k">const</span> next = stepAt(n.term, r.path, <span class="s">"beta"</span>).reduct;
+    <span class="k">const</span> known = index.get(alphaKey(next, ctx));
+    edges.push({ from: n.id, to: known ?? add(next, n.depth + 1), path: r.path });
+  }
+}</code></pre>
+  <p>Module 6 pays off here. α-equivalence is a string compare, so Ω's step back to itself hits <code>known</code> and becomes a self-loop instead of an endless chain.</p>
+
+  <h3>Residuals by marking</h3>
+<pre><code><span class="k">const</span> { ctx, focus } = decompose(t, [...tracked, <span class="s">"fn"</span>]);   <span class="c">// R's λ</span>
+<span class="k">const</span> renamed = renameBinder(focus, MARK);                  <span class="c">// α-convert it to "__res": meaning unchanged</span>
+<span class="k">const</span> reduct = stepAt(plug(ctx, renamed.term), fired, <span class="s">"beta"</span>).reduct;
+<span class="k">const</span> res = findRedexes(reduct).filter(r =&gt; <span class="c">/* its λ is still named __res… */</span>);</code></pre>
+  <p>Substitution copies or drops whole sub-terms, so the marked λ travels with every copy of R. A redex <em>created</em> by the step was never marked, so it isn't a residual.</p>
+
+  <h3>Complete development</h3>
+<pre><code><span class="k">export function</span> develop(t: Term): Term {
+  <span class="k">switch</span> (t.kind) {
+    <span class="k">case</span> <span class="s">"var"</span>: <span class="k">return</span> t;
+    <span class="k">case</span> <span class="s">"lam"</span>: <span class="k">return</span> Lam(t.param, develop(t.body));
+    <span class="k">case</span> <span class="s">"app"</span>:
+      <span class="k">if</span> (t.fn.kind === <span class="s">"lam"</span>) <span class="k">return</span> subst(develop(t.fn.body), t.fn.param, develop(t.arg));
+      <span class="k">return</span> App(develop(t.fn), develop(t.arg));
+  }
+}</code></pre>
+  <div class="callout gold"><div class="label">How the real proof goes</div>
+  <p>Directly proving "forks rejoin" fails, because one step can <em>copy</em> a redex, so rejoining may take many steps. Tait and Martin-Löf's fix was to define
+  <strong>parallel reduction</strong> ⇒ (contract any set of existing redexes at once), which <em>does</em> have the one-step diamond property, and whose repetition equals →*.
+  Takahashi (1995) shortened it further: every one-step reduct of M reaches the single term <code>M*</code>, "the triangle". The tests check that triangle on random terms.</p></div>
+  <div class="bullets"><div class="label">BULLET POINTS</div><ul>
+    <li>A reduction graph shows every path. α-merging turns loops into self-edges.</li>
+    <li>Church–Rosser: forks always rejoin. So normal forms are unique, and can never become unreachable.</li>
+    <li>Residuals: firing S can copy, erase or keep another redex R. It can also create brand-new redexes.</li>
+    <li><code>M*</code> contracts all of M's own redexes at once. It's the heart of the short proof.</li>
+  </ul></div>
+</section>
+
+<section id="s05">
+  <h2><span class="num">05</span>Limits: What You Cannot Do Yet</h2>
+  <div class="compare">
+    <div class="cant"><h4>Can't do yet</h4><ul>
+      <li>Prove Church–Rosser for all terms. We check finite graphs; the proof is by induction (see the callout above).</li>
+      <li>Explore infinite graphs fully, so limits truncate them.</li>
+      <li>Use η in the graph. Confluence of βη is true too (Module 11 adds η-steps).</li>
+    </ul></div>
+    <div class="can"><h4>Can do now</h4><ul>
+      <li>Draw every reduction path of a small term.</li>
+      <li>Check fork-rejoin, unique normal forms and "no node cut off" on it.</li>
+      <li>Track residuals through a step, and tell created redexes apart.</li>
+      <li>Compute complete developments and test the triangle property.</li>
+    </ul></div>
+  </div>
+</section>
+
+<section id="s06">
+  <h2><span class="num">06</span>Run It</h2>
+  <div class="run-box"><h4>Run the tests</h4>
+  <pre><code>cd alonzo/track1-engine/10_confluence
+npm test</code></pre>
+  <div class="desc">9 new + 112 carried from Modules 1–9. Actual summary:</div>
+<pre><code><span class="o"># tests 121
+# pass 121
+# fail 0</span></code></pre>
+  <div class="desc">Then <code>npm run demo</code>. Actual output (the first graph is drawn in 03):</div>
+<pre><code><span class="o">(λx. y) ((λx. x x) (λx. x x))
+  #0 (depth 0): (λx. y) ((λx. x x) λx. x x)
+  #1 (depth 1) NORMAL: y
+    #0 → #1   (redex at ε)
+    #0 → #0   (redex at arg)
+  forks: 1, rejoined: 1, normal forms: {y}
+
+(λx. x x) (λx. x x)
+  #0 (depth 0): (λx. x x) λx. x x
+    #0 → #0   (redex at ε)
+  forks: 0, rejoined: 0, normal forms: {}
+
+== Residuals: what happens to redex R when S fires ==
+  (λx. x x) ([(λy. y) z])   fire S at ε  →  (λy. y) z ((λy. y) z)
+      residuals of R at: [fn, arg]   (copied)
+  (λx. y) ([(λz. z) a])   fire S at ε  →  y
+      residuals of R at: []   (erased)
+  (λx. [(λy. x y) x]) z   fire S at ε  →  (λy. z y) z
+      residuals of R at: [ε]   (kept (modified))
+  (λf. f ([(λz. z) b])) λw. w   fire S at ε  →  (λw. w) ((λz. z) b)
+      residuals of R at: [arg]   (kept; plus a CREATED redex)
+
+== Complete development M* (Takahashi) ==
+  ((λx. x x) ((λy. y) z))*  =  z z
+  ((λx. x a) (λy. y))*  =  (λy. y) a
+  ((λx. λy. x) ((λa. a) b) ((λc. c) d))*  =  (λy. b) d
+  triangle for M = (λx. x x) ((λy. y) z), M* = z z:
+    M → (λy. y) z ((λy. y) z)    which reaches M*: true
+    M → (λx. x x) z              which reaches M*: true
+
+== Church–Rosser on 1500 random terms ==
+  complete graphs: 1497  (truncated, skipped: 3)
+  forks: 3726, rejoined: 3726
+  graphs with exactly one normal form: 1497; with more than one: 0</span></code></pre></div>
+  <div class="callout red"><div class="label">Getting a blank or broken result?</div>
+  <ul>
+    <li><strong>"TRUNCATED":</strong> the graph hit a limit (<code>maxNodes</code> or <code>maxSize</code>). Raise them for small growing terms, or accept partial conclusions for infinite graphs.</li>
+    <li><strong>"cannot mark the redex":</strong> the tracked path must be a β-redex (its <code>fn</code> must be a λ). Take paths from <code>findRedexes</code>.</li>
+    <li><strong>"Why isn't M* a normal form?":</strong> it contracts only M's <em>original</em> redexes. Created ones, like <code>(λy. y) a</code>, survive.</li>
+  </ul></div>
+  <a class="lab-link" data-lab="10">Open Lab 10: Reduction Graph Explorer</a><span class="lab-note"></span>
+</section>
+
+<section id="s07">
+  <h2><span class="num">07</span>Brain Exercise</h2>
+  <div class="brain"><div class="label">Think before you reveal</div>
+  <p>In <code>(λx. y) Ω</code> you can keep firing the Ω redex forever and never reach <code>y</code>. That sounds like a reduction that "lost" the normal form.</p>
+  <p><strong>Try to construct a term M that has a normal form, and a reduct M' of M (reachable by some steps) from which that normal form is no longer reachable <em>at all</em>.
+  If you can't, explain why no such M exists, and why the Ω loop doesn't count.</strong></p>
+  <a class="lab-link" data-lab="10">Hunt for one in the Lab</a>
+  <details><summary>Reveal the answer</summary>
+  <p><strong>No such M exists.</strong> Suppose M →* N (N normal) and M →* M'. By Church–Rosser there's a P with N →* P and M' →* P. But N is normal, so it has no steps,
+  which means P = N. Therefore M' →* N: the normal form is still reachable from M'. (The Lab reports this for every term you try: "every node can still reach the normal form".)</p>
+  <p>The Ω loop doesn't count because firing Ω returns to the <em>same</em> node, from which <code>y</code> is still one step away. You can fail to <em>take</em> the exit, but it never
+  disappears. That's precisely the difference between "some strategy may not terminate" (Module 9) and "the answer is lost" (impossible). It's why normal order, which always
+  takes the outermost exit, is guaranteed to find it.</p></details></div>
+</section>
+
+<section id="s08">
+  <h2><span class="num">08</span>There Are No Dumb Questions</h2>
+  <div class="qa">
+    <p class="q">Who were Church and Rosser?</p>
+    <p class="a">Alonzo Church and his student J. Barkley Rosser proved the theorem in 1936, the same year Church used the λ-calculus to show the Entscheidungsproblem unsolvable. Without confluence, "the value of a term" wouldn't even be well-defined.</p>
+    <p class="q">If forks always rejoin, why can the number of steps differ so much between paths?</p>
+    <p class="a">Confluence says the paths <em>meet</em>, not that they're equally long. Duplication (Module 8) and discarding (Module 9) make some paths much longer, or infinite, as in the Ω loop.</p>
+    <p class="q">Is every rewriting system confluent?</p>
+    <p class="a">No. Add the rules <code>a → b</code> and <code>a → c</code> with <code>b</code> and <code>c</code> normal, and <code>a</code> has two normal forms. The λ-calculus is special: its single rule, applied anywhere, never creates an irreconcilable choice.</p>
+    <p class="q">What's a "created" redex, exactly?</p>
+    <p class="a">One that didn't exist anywhere before the step. In <code>(λf. f P) (λw. w)</code>, firing the outer redex puts <code>λw. w</code> in function position: <code>(λw. w) P</code> is brand new. Created redexes are why <code>M*</code> isn't always normal.</p>
+  </div>
+</section>
+
+<section id="s09">
+  <h2><span class="num">09</span>What's Next</h2>
+  <p>So far "done" has meant β-normal form. But Module 7 already met <em>head</em> normal form, and Module 9's call-by-name stopped at <em>weak</em> head normal form. <strong>Module 11</strong>
+  brings η back as a full reduction rule, and lines up the whole <strong>zoo of normal forms</strong> (βη, β, head, weak head, value). For each one, a real term sits in it but not in the next.
+  It comes with a vocabulary web, because these are among the most confused terms in functional programming.</p>
+</section>
+
+<div class="module-nav">
+  <a href="../09_strategies/tutorial.html"><span class="dir">← Previous</span>Module 9: Reduction Strategies &amp; Traces</a>
+  <a class="next" href="../11_eta_normal_forms/tutorial.html"><span class="dir">Next →</span>Module 11: η-Conversion &amp; Normal-Form Zoo</a>
+</div>
+</main>
+<footer>Alonzo · Track 1 · Module 10 · <a href="DECISIONS.md">DECISIONS.md</a> · <a href="../../GLOSSARY.md">Glossary</a></footer>
+<script src="../../shared/course.js"></script>
+</body>
+</html>

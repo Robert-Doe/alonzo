@@ -1,0 +1,9 @@
+{
+  "name": "alonzo-04-alpha",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --experimental-strip-types --no-warnings --test test.ts \"tests/*.test.ts\"",
+    "demo": "node --experimental-strip-types --no-warnings demo.ts"
+  }
+}

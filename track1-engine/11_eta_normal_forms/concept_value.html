@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Concept: Value</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700;800&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../shared/course.css">
+</head>
+<body>
+<nav class="topbar"><a class="brand" href="../../index.html">λ <span>Alonzo</span></a><a href="concept_how_they_connect.html">Vocabulary hub</a><a href="tutorial.html">Module 11 tutorial</a><span class="spacer"></span><span class="muted">Vocabulary web · 5 of 5</span></nav>
+<header class="hero">
+  <div class="badge">CONCEPT</div>
+  <h1>Value</h1>
+  <p class="tagline">In call-by-value, a λ or a variable: something that may be passed as an argument.</p>
+</header>
+<main class="container">
+<section>
+  <h2>In one sentence</h2>
+  <p>A <strong>value</strong> is what call-by-value is allowed to substitute: an abstraction or (for open terms) a variable. <code>(λx. M) V → M[x := V]</code> requires V to be a value.</p>
+  <div class="analogy"><div class="big">A value is a sealed package the post office will accept.</div><p>Loose, still-changing contents must be packed (evaluated) before they can be sent.</p></div>
+</section>
+<section>
+  <h2>See it</h2>
+  <pre><code><span class="o">λx. (λy. y y) (λy. y y)         ·     ·    ·     ✓    ✓</span></code></pre><p class="muted"><code>λx. Ω</code> is a value, and head reduction on it runs out of fuel.</p>
+</section>
+<section>
+  <h2>Common mix-up</h2>
+  <div class="callout red"><div class="label">Wrong</div><p>"A value is a term in normal form."</p></div>
+  <div class="callout green"><div class="label">Right</div><p>A value may contain redexes under its λ (<code>λx. (λy. y) x</code>), and a normal form need not be a value (<code>x y</code> is normal but not a value).</p></div>
+</section>
+<section>
+  <div class="callout accent"><div class="label">How this connects to the other terms</div><p>Values ⊆ <a href="concept_weak_head_normal_form.html">WHNF</a>. A value is independent of <a href="concept_beta_normal_form.html">β-normal form</a>: neither implies the other.</p></div>
+  <p>Siblings: <a href="concept_beta_eta_normal_form.html">βη-normal form</a> · <a href="concept_beta_normal_form.html">β-normal form</a> · <a href="concept_head_normal_form.html">Head normal form</a> · <a href="concept_weak_head_normal_form.html">Weak head normal form</a></p>
+  <p><a href="concept_how_they_connect.html">→ See all 5 terms side by side</a></p>
+</section>
+</main>
+<footer>Alonzo · Module 11 vocabulary web</footer>
+</body>
+</html>

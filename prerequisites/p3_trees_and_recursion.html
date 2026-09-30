@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trees & Recursion</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700;800&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../shared/course.css">
+</head>
+<body style="--accent:#d4a017;--accent-rgb:245,200,66">
+<nav class="topbar"><a class="brand" href="../index.html">λ <span>Alonzo</span></a><a href="../prerequisites.html">← All prerequisites</a><span class="spacer"></span><span class="muted">P3 of 8</span></nav>
+<header class="hero">
+  <div class="badge">PREREQUISITE P3</div>
+  <h1>Trees &amp; <span>Recursion</span></h1>
+  <p class="tagline">A program is text on the outside and a tree on the inside. Every algorithm in this course walks that tree with a function that calls itself.</p>
+</header>
+<main class="container">
+
+<section id="text-vs-tree">
+  <h2><span class="num">P3.1</span>Text is flat, meaning is nested</h2>
+  <p>The string <code>1 + 2 * 3</code> is a flat row of characters, but its <em>meaning</em> is nested: the multiplication
+  happens inside the addition. A <strong>syntax tree</strong> makes that nesting explicit.</p>
+  <div class="diagram"><div class="tree">    +
+   / \
+  1   *
+     / \
+    2   3</div><div class="caption">The tree for <code>1 + 2 * 3</code>. The parentheses and precedence rules are gone. Nesting says it all.</div></div>
+  <p>Programs are handled as trees, not strings, because <strong>trees are unambiguous</strong>. Once you have
+  the tree, there's no question of what groups with what.</p>
+</section>
+
+<section id="ast">
+  <h2><span class="num">P3.2</span>Abstract syntax trees (ASTs)</h2>
+  <p>An <strong>abstract</strong> syntax tree drops the things that were only there to help humans read the text: parentheses,
+  spaces, the dot in <code>λx.</code>. It keeps only the structure. Each node has a <strong>kind</strong> (what shape it is) and
+  <strong>children</strong> (its sub-trees). A node with no children is a <strong>leaf</strong>.</p>
+  <p>The λ-calculus AST has exactly three node kinds:</p>
+  <div class="table-wrap"><table class="data">
+    <tr><th>Kind</th><th>Written</th><th>Children</th></tr>
+    <tr><td>Variable</td><td><code>x</code></td><td>none (a leaf; stores a name)</td></tr>
+    <tr><td>Abstraction</td><td><code>λx. M</code></td><td>one: the body <code>M</code> (also stores the name <code>x</code>)</td></tr>
+    <tr><td>Application</td><td><code>M N</code></td><td>two: the function <code>M</code> and the argument <code>N</code></td></tr>
+  </table></div>
+</section>
+
+<section id="recursion-on-trees">
+  <h2><span class="num">P3.3</span>Recursion on trees: one case per node kind</h2>
+  <p>To compute something about a whole tree, write a function with one case per node kind. Each case calls the function
+  on its children and combines the results. The tree's shape <em>is</em> the shape of the code.</p>
+  <pre><code><span class="c">// Count the nodes in a λ-term (this exact function appears in Module 1)</span>
+function size(t) {
+  switch (t.kind) {
+    case "var": return 1;                              <span class="c">// leaf: just me</span>
+    case "lam": return 1 + size(t.body);               <span class="c">// me + my one child</span>
+    case "app": return 1 + size(t.fn) + size(t.arg);   <span class="c">// me + my two children</span>
+  }
+}</code></pre>
+  <div class="analogy"><div class="big">Recursion on a tree is a manager delegating to their direct reports.</div>
+  <p>"How many people are in your department?" The manager asks each direct report the <em>same question</em>, adds up the
+  answers, and adds one for themselves. Someone with no reports (a leaf) just answers "1." Nobody needs to see the whole
+  company. Each person handles one level.</p></div>
+  <p>Why doesn't it loop forever? Every recursive call is on a <strong>strictly smaller</strong> tree, and trees are finite.
+  Eventually every path hits a leaf. P5 turns this observation into a proof technique.</p>
+</section>
+
+<section id="building-new-trees">
+  <h2><span class="num">P3.4</span>Transforming trees: build a new one, don't mutate</h2>
+  <p>Many algorithms (renaming, substitution, reduction) produce a <em>new</em> tree from an old one. This course
+  never mutates a tree in place. Each case returns a fresh node built from the transformed children. Unchanged
+  sub-trees can be <strong>shared</strong> between the old and new trees safely, precisely because nothing mutates them.</p>
+</section>
+
+<section id="stack-depth">
+  <h2><span class="num">P3.5</span>A practical limit: stack depth</h2>
+  <p>Each recursive call uses a slot on the host language's call stack. A tree 100,000 levels deep can overflow it. Most
+  terms in this course are shallow, but some aren't. Module 20 (the Krivine machine) and Module 21 (CEK) exist
+  partly to <em>remove</em> this dependence on the host stack.</p>
+</section>
+
+<section id="in-this-course">
+  <h2><span class="num">P3.6</span>Where this shows up</h2>
+  <p>Everywhere. Module 1 defines the tree. Module 3 builds trees from text. Every later module is "one more
+  recursive function over this tree."</p>
+</section>
+<div class="module-nav"><a href="p2_variables_binding_scope.html"><span class="dir">← Previous</span>P2 Variables, Binding &amp; Scope</a><a class="next" href="p4_grammars_and_bnf.html"><span class="dir">Next →</span>P4 Grammars &amp; BNF</a></div>
+</main>
+<footer>Alonzo · Prerequisite P3</footer>
+</body>
+</html>

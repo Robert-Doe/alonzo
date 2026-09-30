@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Associativity in Real Languages</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700;800&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../shared/course.css">
+</head>
+<body>
+<nav class="topbar"><a class="brand" href="../../index.html">λ <span>Alonzo</span></a><a href="01_explainer.html">Explainer</a><a href="02_deepdive_left_vs_right_in_parsers.html">Deep dive 1</a><a href="03_deepdive_currying_and_the_arrow.html">Deep dive 2</a><span class="spacer"></span><span class="muted">Lesson cluster 01 · deep dive 3</span></nav>
+<header class="hero">
+  <div class="badge">DEEP DIVE</div>
+  <h1>Real Languages, <span>Real Bugs</span></h1>
+  <p class="tagline">What JavaScript, Python, C and Haskell actually do, and the places where an associativity or precedence surprise has bitten real programmers.</p>
+</header>
+<main class="container">
+
+<section>
+  <h2>Measured, not remembered</h2>
+  <p>Actual output of Node v22.14 and Python 3.14 on this machine:</p>
+<pre><code><span class="o">js 2**3**2 = 512
+js 10-4-3 = 3
+js -2 ** 2 -&gt; SyntaxError Unary operator used immediately before exponentiation expression. Parenthesis must be used to disambiguate operator precedence
+a=b=5 -&gt; 5 5
+js 100/10/5 = 2
+py 2**3**2 = 512
+py -2**2 = -4
+py 10-4-3 = 3</span></code></pre>
+  <div class="table-wrap"><table class="data">
+    <tr><th>Expression</th><th>Groups as</th><th>Why</th></tr>
+    <tr><td><code>10 - 4 - 3</code></td><td><code>(10 - 4) - 3 = 3</code></td><td>subtraction is left-assoc (not algebraically associative)</td></tr>
+    <tr><td><code>100 / 10 / 5</code></td><td><code>(100 / 10) / 5 = 2</code></td><td>division too</td></tr>
+    <tr><td><code>2 ** 3 ** 2</code></td><td><code>2 ** (3 ** 2) = 512</code></td><td>exponent is right-assoc, like the math notation 2<sup>3<sup>2</sup></sup></td></tr>
+    <tr><td><code>a = b = 5</code></td><td><code>a = (b = 5)</code></td><td>assignment is right-assoc in C, JavaScript, …</td></tr>
+    <tr><td>JS <code>-2 ** 2</code></td><td>SyntaxError</td><td>JavaScript refuses to guess between (−2)² and −(2²)</td></tr>
+    <tr><td>Python <code>-2**2</code></td><td><code>-(2**2) = -4</code></td><td>Python chose: <code>**</code> binds tighter than unary minus</td></tr>
+  </table></div>
+  <p>The JavaScript/Python difference on <code>-2 ** 2</code> is a precedence choice, not associativity. JavaScript's designers made the ambiguous form a syntax error instead of picking a winner.</p>
+</section>
+
+<section>
+  <h2>Haskell: the λ-calculus conventions, verbatim</h2>
+  <ul>
+    <li>Function application is juxtaposition, left-associative, and binds tighter than any operator, exactly like the λ-calculus.</li>
+    <li>The type arrow <code>-&gt;</code> is right-associative: <code>Int -&gt; Int -&gt; Int</code>.</li>
+    <li><code>$</code> is declared <code>infixr 0</code>: lowest precedence, right-associative, so <code>f $ g $ h x</code> = <code>f (g (h x))</code>. It exists to escape left-associative application without parentheses.</li>
+    <li><code>.</code> (composition) is declared <code>infixr 9</code>.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>How these become bugs</h2>
+  <ul>
+    <li><strong>A printer that drops a needed pair of parentheses.</strong> Print <code>f (a b)</code> as <code>f a b</code> and a round trip silently changes the program. Module 3's test (5000 random round trips, every paren checked) exists to catch exactly this.</li>
+    <li><strong>A macro that doesn't parenthesize its arguments.</strong> The C preprocessor pastes text: <code>#define SQ(x) x*x</code> makes <code>SQ(1+2)</code> into <code>1+2*1+2</code> = 5, not 9. That's precedence, and it's the same "text is lossy" lesson as Module 1.</li>
+    <li><strong>Unexpected λ-body extension.</strong> <code>f λx. x g</code> is <code>f (λx. x g)</code>, not <code>f (λx. x) g</code>. The same thing happens with lambdas in languages where they extend right (for example Haskell's <code>\x -&gt; …</code>).</li>
+  </ul>
+  <div class="callout accent"><div class="label">How this connects</div><p>Every one of these is "the tree you meant isn't the tree the text says". The λ-calculus makes it vivid because the whole language is two conventions. Track 2's Alonzo-ML adds infix operators with declared associativity, and its parser tests will reuse Module 3's round-trip idea.</p></div>
+</section>
+<div class="module-nav"><a href="03_deepdive_currying_and_the_arrow.html"><span class="dir">← Previous</span>Currying and the arrow</a><a class="next" href="01_explainer.html"><span class="dir">Back to</span>Explainer</a></div>
+</main>
+<footer>Alonzo · Lesson cluster 01 · deep dive 3</footer>
+</body>
+</html>

@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Church Booleans & Pairs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700;800&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../shared/course.css">
+</head>
+<body>
+<nav class="topbar"><a class="brand" href="../../index.html">λ <span>Alonzo</span></a><a href="../../prerequisites.html">Prerequisites</a><a href="../../GLOSSARY.md">Glossary</a><a href="DECISIONS.md">Decisions</a><span class="spacer"></span><span class="muted">Track 1 · Phase 3 · Module 13 of 34</span></nav>
+
+<header class="hero">
+  <div class="badge">MODULE 13</div>
+  <h1>Church <span>Booleans</span> &amp; Pairs</h1>
+  <p class="tagline">The calculus has no true, no false, no data at all, only functions. So we make data <em>out of</em> behaviour: a boolean is a choice, and a pair is a function waiting to be asked a question.</p>
+  <div class="hero-grid">
+    <div class="hero-stat"><div class="num">true = K</div><div class="label">the same term</div></div>
+    <div class="hero-stat"><div class="num">22</div><div class="label">prelude definitions</div></div>
+    <div class="hero-stat"><div class="num">154/154</div><div class="label">tests passing</div></div>
+  </div>
+</header>
+
+<main class="container">
+
+<section id="s00">
+  <h2><span class="num">00</span>Prerequisites</h2>
+  <div class="prereq-bar">
+    <a class="tag" href="../../prerequisites/p1_functions_as_mappings.html#first-class">P1.3 functions are values</a>
+    <a class="tag" href="../../prerequisites/p1_functions_as_mappings.html#currying">P1.4 currying</a>
+  </div>
+  <p>From the course: the REPL and prelude (<a href="../12_repl_prelude/tutorial.html">Module 12</a>), K and KI (<a href="../12_repl_prelude/tutorial.html#s03">prelude table</a>), and the strategies that decide whether <code>if</code> is lazy (<a href="../09_strategies/tutorial.html">Module 9</a>).</p>
+</section>
+
+<section id="s01">
+  <h2><span class="num">01</span>The Big Analogy</h2>
+  <div class="analogy">
+    <div class="big">A Church boolean is a railway switch, and a pair is a locker with two compartments.</div>
+    <p><strong>true</strong> is a switch set to the left track, <strong>false</strong> to the right. It has no "value" to inspect. You send it two trains, <code>t</code> and <code>f</code>, and it lets exactly one through:
+    <code>true t f = t</code>. That's all a boolean ever does. So <code>if b then x else y</code> is just <code>b x y</code>: the switch <em>is</em> the if.</p>
+    <p>A <strong>pair</strong> <code>pair a b</code> is a locker holding <code>a</code> and <code>b</code>. It won't show you its contents. It waits for you to hand it a <em>switch</em> and gives you whichever
+    compartment the switch points at: <code>fst p = p true</code>, <code>snd p = p false</code>.</p>
+  </div>
+</section>
+
+<section id="s02">
+  <h2><span class="num">02</span>What Happens, Step by Step</h2>
+  <ol class="steps">
+    <li><code>prelude.lam</code> gains <code>true</code>, <code>false</code>, <code>if</code>, <code>not</code>, <code>and</code>, <code>or</code>, <code>xor</code>, <code>pair</code>, <code>fst</code>, <code>snd</code> and <code>swap</code>, all plain definitions (Module 12).</li>
+    <li>Evaluating <code>and true false</code> expands every name, then reduces with normal order.</li>
+    <li>The REPL names the result: <code>λt. λf. f   = false</code>.</li>
+    <li>From TypeScript, <code>decodeBool</code> normalizes a term and checks whether it's α-equal to <code>true</code> or <code>false</code>. <code>null</code> means "not a boolean".</li>
+    <li><code>truthTable</code> encodes every input combination, applies the operator, reduces and decodes. Every table row is a real computation.</li>
+  </ol>
+</section>
+
+<section id="s03">
+  <h2><span class="num">03</span>The Map: Tables Computed by Reduction</h2>
+  <p>Real <code>npm run demo</code> output:</p>
+<pre><code><span class="o">and:
+  and F F  =  F    (4 steps)
+  and F T  =  F    (4 steps)
+  and T F  =  F    (4 steps)
+  and T T  =  T    (4 steps)
+xor:
+  xor F F  =  F    (4 steps)
+  xor F T  =  T    (4 steps)
+  xor T F  =  T    (7 steps)
+  xor T T  =  F    (7 steps)</span></code></pre>
+  <p>Why does <code>xor T …</code> take longer? <code>xor = λp q. p (not q) q</code>. When <code>p</code> is true, it picks <code>not q</code>, which is more work to reduce.</p>
+  <div class="table-wrap"><table class="map-table">
+    <tr><th>Name</th><th>Definition</th><th>Reads as</th></tr>
+    <tr><td><code>true</code> / <code>false</code></td><td><code>λt f. t</code> / <code>λt f. f</code></td><td>pick the first / pick the second</td></tr>
+    <tr><td><code>not</code></td><td><code>λb. b false true</code></td><td>if b then false else true</td></tr>
+    <tr><td><code>and</code></td><td><code>λp q. p q false</code></td><td>if p then q else false</td></tr>
+    <tr><td><code>or</code></td><td><code>λp q. p true q</code></td><td>if p then true else q</td></tr>
+    <tr><td><code>pair</code></td><td><code>λa b s. s a b</code></td><td>hold a and b, and wait for a selector</td></tr>
+    <tr><td><code>fst</code> / <code>snd</code></td><td><code>λp. p true</code> / <code>λp. p false</code></td><td>hand the pair a switch</td></tr>
+  </table></div>
+  <a class="lab-link" data-lab="13" data-term="λp q. not (and p q)">Build truth tables in the Lab</a><span class="lab-note"></span>
+</section>
+
+<section id="s04">
+  <h2><span class="num">04</span>The Code, Explained</h2>
+  <h3>The prelude additions</h3>
+  <p class="file-label">prelude.lam</p>
+<pre><code>true  = λt f. t              <span class="c">-- choose the first  (the same term as K)</span>
+false = λt f. f              <span class="c">-- choose the second (the same term as KI)</span>
+if    = λb t e. b t e        <span class="c">-- "if" does nothing: the boolean does the choosing</span>
+not   = λb. b false true
+and   = λp q. p q false
+or    = λp q. p true q
+pair  = λa b s. s a b
+fst   = λp. p true
+snd   = λp. p false</code></pre>
+
+  <h3>Decoding: the only way to ask "is this true?"</h3>
+  <p class="file-label">src/church.ts</p>
+<pre><code><span class="k">export function</span> decodeBool(t: Term, opts?: RunOptions): boolean | <span class="k">null</span> {
+  <span class="k">const</span> r = normalize(t, opts);
+  <span class="k">if</span> (r.status !== <span class="s">"done"</span>) <span class="k">return null</span>;
+  <span class="k">if</span> (alphaEquivalent(r.result, TRUE)) <span class="k">return true</span>;
+  <span class="k">if</span> (alphaEquivalent(r.result, FALSE)) <span class="k">return false</span>;
+  <span class="k">return null</span>;
+}</code></pre>
+  <p>No tag says "I'm a boolean". A term is <code>true</code> exactly when its normal form is <code>λt f. t</code>. Here, normalization and α-equivalence (Modules 4 and 9) <em>are</em> the type system.</p>
+  <div class="bullets"><div class="label">BULLET POINTS</div><ul>
+    <li>A boolean is a choice between two arguments. <code>if</code> is redundant.</li>
+    <li>A pair is a function waiting for a selector, and the selectors are booleans.</li>
+    <li><code>true</code> is literally <code>K</code>. Data and code are the same stuff.</li>
+    <li><code>if</code> must not evaluate both branches, so strict strategies need thunks.</li>
+  </ul></div>
+</section>
+
+<section id="s05">
+  <h2><span class="num">05</span>Limits: What You Cannot Do Yet</h2>
+  <div class="compare">
+    <div class="cant"><h4>Can't do yet</h4><ul>
+      <li>Count. Numbers come next (Module 14).</li>
+      <li>Stop nonsense: <code>not (λx. x)</code> computes garbage without complaint (types, Module 24).</li>
+      <li>Loop or recurse over data (Module 15), or build lists (Module 16).</li>
+    </ul></div>
+    <div class="can"><h4>Can do now</h4><ul>
+      <li>Do all of propositional logic with pure functions, verified by truth tables.</li>
+      <li>Package and unpack values in pairs (and nested pairs: triples, …).</li>
+      <li>Decode Church data back into TypeScript booleans and tuples.</li>
+      <li>Explain why every strict language treats <code>if</code> specially.</li>
+    </ul></div>
+  </div>
+</section>
+
+<section id="s06">
+  <h2><span class="num">06</span>Run It</h2>
+  <div class="run-box"><h4>Run the tests</h4>
+  <pre><code>cd alonzo/track1-engine/13_booleans_pairs
+npm test</code></pre>
+  <div class="desc">10 new + 144 carried from Modules 1–12 (Module 12's tests run against Module 12's own prelude, kept as <code>tests/12_prelude.lam</code>). Actual summary:</div>
+<pre><code><span class="o"># tests 154
+# pass 154
+# fail 0</span></code></pre>
+  <div class="desc">Then <code>npm run demo</code> (or explore with <code>npm run repl</code>). Actual output, REPL section:</div>
+<pre><code><span class="o">λ&gt; true a b
+a
+  (normal: 2 steps, β-normal form)
+λ&gt; and true (or false true)
+λt. λf. t   = true
+  (normal: 8 steps, β-normal form)
+λ&gt; swap (pair a b)
+λs. s b a
+  (normal: 15 steps, β-normal form)
+λ&gt; fst (snd (pair a (pair b c)))
+b
+  (normal: 12 steps, β-normal form)
+
+== Why if must be lazy ==
+λ&gt; if true a Omega
+a
+  (normal: 5 steps, β-normal form)
+λ&gt; :strategy cbv
+strategy: call-by-value
+λ&gt; :fuel 200
+fuel: 200
+λ&gt; if true a Omega
+(λe. (λt. λf. t) a e) ((λx. x x) λx. x x)
+  (cbv: OUT OF FUEL after 200 steps)
+λ&gt; if true (λd. a) (λd. Omega) I
+a
+  (cbv: 6 steps, β-normal form)</span></code></pre></div>
+  <div class="callout red"><div class="label">Getting a blank or broken result?</div>
+  <ul>
+    <li><strong>The result prints as <code>λt. λf. t</code> instead of <code>true</code>:</strong> it <em>is</em> true. The REPL adds <code>= true</code> when naming is on. In TypeScript, use <code>decodeBool</code>.</li>
+    <li><strong><code>if</code> hangs under <code>:strategy cbv</code>:</strong> expected. Both branches are arguments, so they're evaluated first. Wrap them in <code>λd.</code> and apply the result to <code>I</code>.</li>
+    <li><strong><code>decodeBool</code> returns <code>null</code>:</strong> the term's normal form isn't exactly true or false (or it ran out of fuel).</li>
+  </ul></div>
+  <a class="lab-link" data-lab="13">Open Lab 13: Booleans &amp; Pairs Workbench</a><span class="lab-note"></span>
+</section>
+
+<section id="s07">
+  <h2><span class="num">07</span>Brain Exercise</h2>
+  <div class="brain"><div class="label">Think before you reveal</div>
+  <p>Implication <code>p → q</code> is false only when p is true and q is false.</p>
+  <p><strong>Define <code>implies</code> using nothing but the booleans p and q themselves, plus <code>true</code>/<code>false</code>: no <code>if</code>, <code>not</code>, <code>and</code> or <code>or</code>. Hint: read your definition out loud as "if p then … else …".
+  Then: why does the same trick make <code>if</code> itself unnecessary?</strong></p>
+  <a class="lab-link" data-lab="13">Check your definition in the Lab</a>
+  <details><summary>Reveal the answer</summary>
+  <p><code>implies = λp q. p q true</code>, read as "if p then q, else true". If p is false, the implication holds. If p is true, it holds exactly when q does. The Lab's checker
+  confirms the table F F → T, F T → T, T F → F, T T → T by reduction.</p>
+  <p>The trick is that a boolean <em>is</em> an if: <code>p x y</code> already means "if p then x else y". Every two-way decision can be written by applying the boolean. That's why
+  <code>if = λb t e. b t e</code> is just η-expanded identity on booleans. We keep it only because it reads well.</p></details></div>
+</section>
+
+<section id="s08">
+  <h2><span class="num">08</span>There Are No Dumb Questions</h2>
+  <div class="qa">
+    <p class="q">If <code>true</code> and <code>K</code> are the same term, how does the REPL know which name to print?</p>
+    <p class="a">It doesn't know: the term is the same. It prints the most recently defined matching name, which is <code>true</code> because booleans come later in the prelude. In the untyped calculus, meaning comes from how a term is <em>used</em>.</p>
+    <p class="q">What happens if I pass a non-boolean to <code>not</code>?</p>
+    <p class="a">It computes <em>something</em>. <code>not (λx. x)</code> reduces happily, and the result just isn't a boolean (it decodes to <code>null</code>). No error, because nothing in the calculus can raise one. Types (Module 24) exist precisely to reject such programs before they run.</p>
+    <p class="q">Is this how real computers do booleans?</p>
+    <p class="a">No, hardware uses bits. But the <em>idea</em> survives everywhere: pattern matching, visitor objects, and <code>Optional.map(ifPresent, ifAbsent)</code>-style APIs are all "the data picks which branch runs". Track 2's compiler turns Church-style choices into real branches.</p>
+    <p class="q">Can I build triples and records?</p>
+    <p class="a">Yes, by nesting pairs: <code>pair a (pair b c)</code> is a triple, with <code>fst (snd t)</code> getting <code>b</code> (in the demo). Module 16 compares this with other encodings where records and lists are cheaper.</p>
+  </div>
+</section>
+
+<section id="s09">
+  <h2><span class="num">09</span>What's Next</h2>
+  <p>Module 12's Brain Exercise already met <code>twice</code> and <code>thrice</code>, which act like the numbers 2 and 3. <strong>Module 14</strong> makes that official: <strong>Church numerals</strong>, where
+  <em>n</em> is "apply f n times". Addition, multiplication and exponentiation fall out of iteration. <strong>Predecessor</strong> is famously hard, and the story goes that Kleene discovered the pair
+  trick for it at the dentist. With the pairs from this module you'll build it, and <em>measure</em> why it costs O(n) steps while successor costs O(1).</p>
+</section>
+
+<div class="module-nav">
+  <a href="../12_repl_prelude/tutorial.html"><span class="dir">← Previous</span>Module 12: Definitions, Prelude &amp; REPL</a>
+  <a class="next" href="../14_numerals/tutorial.html"><span class="dir">Next →</span>Module 14: Church Numerals &amp; Arithmetic</a>
+</div>
+</main>
+<footer>Alonzo · Track 1 · Module 13 · <a href="DECISIONS.md">DECISIONS.md</a> · <a href="../../GLOSSARY.md">Glossary</a></footer>
+<script src="../../shared/course.js"></script>
+</body>
+</html>

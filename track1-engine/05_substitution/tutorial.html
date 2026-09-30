@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Capture-Avoiding Substitution</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700;800&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../shared/course.css">
+</head>
+<body style="--accent:#f472b6;--accent-rgb:244,114,182">
+<nav class="topbar"><a class="brand" href="../../index.html">λ <span>Alonzo</span></a><a href="../../prerequisites.html">Prerequisites</a><a href="../../GLOSSARY.md">Glossary</a><a href="DECISIONS.md">Decisions</a><a href="concept_how_they_connect.html">Vocabulary web</a><span class="spacer"></span><span class="muted">Track 1 · Phase 1 · Module 5 of 34</span></nav>
+
+<header class="hero">
+  <div class="badge">MODULE 05</div>
+  <h1>Capture-Avoiding <span>Substitution</span></h1>
+  <p class="tagline"><code>M[x := N]</code> ("put N wherever x appears free in M") is the single operation that all of computation will run on. Its obvious implementation is wrong in a way that's easy to miss.</p>
+  <div class="hero-grid">
+    <div class="hero-stat"><div class="num">6</div><div class="label">equations</div></div>
+    <div class="hero-stat"><div class="num">414/3000</div><div class="label">naive results wrong</div></div>
+    <div class="hero-stat"><div class="num">192</div><div class="label">of those visible to an FV check</div></div>
+  </div>
+</header>
+
+<main class="container">
+
+<section id="s00">
+  <h2><span class="num">00</span>Prerequisites</h2>
+  <div class="prereq-bar">
+    <a class="tag" href="../../prerequisites/p2_variables_binding_scope.html#free-bound">P2.2 free vs bound</a>
+    <a class="tag" href="../../prerequisites/p2_variables_binding_scope.html#names-dont-matter">P2.5 capture warning</a>
+    <a class="tag" href="../../prerequisites/p3_trees_and_recursion.html#building-new-trees">P3.4 build, don't mutate</a>
+    <a class="tag" href="../../prerequisites/p5_structural_induction.html#dominoes">P5.1 structural induction</a>
+    <a class="tag" href="../../prerequisites/p6_rewriting_systems.html#rewrite">P6.1 rewriting</a>
+  </div>
+  <p>From the course: <a href="../04_alpha/tutorial.html">Module 4</a>'s <code>freeVars</code>, <code>alphaEquivalent</code> and the refusal in <code>renameBinder</code>. This module turns that refusal into a repair.
+  If binder, scope, free, bound and capture blur together, start with the <a href="concept_how_they_connect.html"><strong>vocabulary hub</strong></a>.</p>
+</section>
+
+<section id="s01">
+  <h2><span class="num">01</span>The Big Analogy</h2>
+  <div class="analogy">
+    <div class="big">Substitution is mail-merge, and capture is the letter that reaches the wrong person.</div>
+    <p>You have a form letter M with a blank marked <em>x</em>, and a value N to paste in. Paste N into every blank, except blanks inside a
+    quoted inner document that defines its <em>own</em> "x" (shadowing). Those aren't your blanks.</p>
+    <p>Now the danger. Your value N says "<em>give this to y</em>," meaning the <em>y</em> in your office. But one section of the letter is addressed to a family
+    whose house rule is "<em>here, y means our houseguest</em>" (a <code>λy</code>). Paste N in there unchanged and the message now goes to the houseguest.
+    The text reads fine and the meaning is wrong.</p>
+    <p>The fix is polite and mechanical. Before pasting, ask that family to rename their houseguest's nickname to something nobody uses (<em>y1</em>).
+    Their internal meaning doesn't change (α-conversion, Module 4), and now "y" in your message can only mean your y.</p>
+  </div>
+</section>
+
+<section id="s02">
+  <h2><span class="num">02</span>What Happens, Step by Step</h2>
+  <ol class="steps">
+    <li><code>subst(M, x, N)</code> computes <code>FV(N)</code> once. It's needed at every λ.</li>
+    <li>At a variable: if it's <code>x</code>, return <code>N</code>. Otherwise return it unchanged.</li>
+    <li>At an application: substitute in both sides. If neither changed, return the original node (sharing).</li>
+    <li>At <code>λx. P</code>: stop. This λ shadows x, so there are no free x's below.</li>
+    <li>At <code>λy. P</code> where x isn't free in P: stop too. Nothing to replace.</li>
+    <li>At <code>λy. P</code> where N doesn't mention a free y: no capture is possible, so go into P.</li>
+    <li>Otherwise, <strong>danger</strong>. Pick a fresh <code>z</code> that is free in neither N nor P and isn't x. Rename <code>λy. P</code> to <code>λz. P[y := z]</code>, then go into it.</li>
+  </ol>
+</section>
+
+<section id="s03">
+  <h2><span class="num">03</span>The Map: Watching a Capture Happen</h2>
+  <p>Compute <code>(λy. x)[x := y]</code>. Before: the λ ignores its argument and returns <strong>the outside y</strong> (after x is replaced). Colors show ownership, as in the Lab:</p>
+  <div class="diagram">
+    <svg viewBox="0 0 660 250" width="660" role="img" aria-label="Naive vs capture-avoiding substitution">
+      <defs><marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#d4a017"/></marker></defs>
+      <g font-family="JetBrains Mono, monospace" font-size="22">
+        <text x="20" y="45" fill="#eeece6" xml:space="preserve">(<tspan fill="#d4a017" font-weight="700">λy</tspan>. <tspan fill="#f87171">x</tspan>)[x := <tspan fill="#f87171">y</tspan>]</text>
+        <text x="20" y="140" fill="#9a9992" font-size="15">naive</text>
+        <text x="100" y="140" fill="#eeece6" xml:space="preserve"><tspan fill="#d4a017" font-weight="700">λy</tspan>. <tspan fill="#d4a017">y</tspan></text>
+        <text x="20" y="215" fill="#9a9992" font-size="15">correct</text>
+        <text x="100" y="215" fill="#eeece6" xml:space="preserve"><tspan fill="#82aaff" font-weight="700">λy1</tspan>. <tspan fill="#f87171">y</tspan></text>
+      </g>
+      <path d="M 150 124 C 145 100, 122 100, 114 122" fill="none" stroke="#d4a017" stroke-width="2" marker-end="url(#a1)"/>
+      <g font-family="Inter, sans-serif" font-size="14">
+        <text x="270" y="40" fill="#9a9992">red = free (belongs to the outside world)</text>
+        <text x="220" y="128" fill="#f87171">✗ the pasted y turned gold: λy captured it.</text>
+        <text x="220" y="148" fill="#9a9992">This is now the IDENTITY function, a different program.</text>
+        <text x="220" y="205" fill="#4ade80">✓ binder renamed first (y → y1); the pasted y stays red.</text>
+        <text x="220" y="225" fill="#9a9992">Still "ignore the argument, return the outside y."</text>
+      </g>
+    </svg>
+    <div class="caption">Real outputs of <code>substNaive</code> and <code>subst</code>. See section 06.</div>
+  </div>
+  <a class="lab-link" data-lab="05">Watch the colors change in the Lab</a><span class="lab-note"></span>
+</section>
+
+<section id="s04">
+  <h2><span class="num">04</span>The Code, Explained</h2>
+  <h3>The naive version: one missing check</h3>
+  <p class="file-label">src/subst.ts</p>
+<pre><code><span class="k">case</span> <span class="s">"lam"</span>:
+  <span class="k">if</span> (m.param === x) <span class="k">return</span> m;                          <span class="c">// x is shadowed: nothing to replace below</span>
+  <span class="k">return</span> Lam(m.param, substNaive(m.body, x, n));        <span class="c">// BUG: if m.param is free in n, it gets captured</span></code></pre>
+  <p>It respects shadowing, so it's not <em>obviously</em> wrong. It just walks N into a binder's scope without asking whether N mentions that binder's name.</p>
+
+  <h3>The capture-avoiding λ case</h3>
+<pre><code><span class="k">case</span> <span class="s">"lam"</span>: {
+  <span class="k">if</span> (m.param === x) <span class="k">return</span> m;
+  <span class="k">const</span> fvBody = freeVars(m.body);
+  <span class="k">if</span> (!fvBody.has(x)) <span class="k">return</span> m;                             <span class="c">// nothing to substitute below: share</span>
+  <span class="k">if</span> (!fvN.has(m.param)) <span class="k">return</span> Lam(m.param, go(m.body));   <span class="c">// no capture possible</span>
+  <span class="c">// Capture danger: rename the binder to z, which is free in neither N nor the body, and isn't x.</span>
+  <span class="k">const</span> avoid = <span class="k">new</span> Set([...fvN, ...fvBody, x]);
+  <span class="k">const</span> z = freshName(m.param, avoid);
+  log?.renames.push({ from: m.param, to: z });
+  <span class="k">return</span> Lam(z, go(subst(m.body, m.param, Var(z), log)));
+}</code></pre>
+  <p>Three escapes, then the repair. Why must <code>z</code> avoid the body's <em>own</em> free variables? Take <code>(λy. x y1)[x := y]</code>. Renaming y to <code>y1</code>
+  would capture the body's free <code>y1</code>, so the engine skips to <code>y2</code>. That's in the demo output.</p>
+
+  <h3>Fresh names</h3>
+<pre><code><span class="k">export function</span> freshName(base: string, avoid: Set&lt;string&gt;): string {
+  <span class="k">if</span> (!avoid.has(base)) <span class="k">return</span> base;
+  <span class="k">const</span> stem = base.replace(<span class="s">/\d+$/</span>, <span class="s">""</span>);
+  <span class="k">for</span> (<span class="k">let</span> i = 1; ; i++) { <span class="k">const</span> c = `${stem}${i}`; <span class="k">if</span> (!avoid.has(c)) <span class="k">return</span> c; }
+}</code></pre>
+  <div class="bullets"><div class="label">BULLET POINTS</div><ul>
+    <li>Substitution replaces <em>free</em> occurrences only, and stops at a shadowing binder.</li>
+    <li>Capture: N's free variable lands under a binder with the same name.</li>
+    <li>The fix is α-conversion on demand: rename the obstructing binder to a fresh name, then continue.</li>
+    <li>Checking free variables before and after does <em>not</em> detect all captures (the Brain Exercise).</li>
+  </ul></div>
+</section>
+
+<section id="s05">
+  <h2><span class="num">05</span>Limits: What You Cannot Do Yet</h2>
+  <div class="compare">
+    <div class="cant"><h4>Can't do yet</h4><ul>
+      <li>Compute. Substitution is the <em>tool</em> for β-reduction, but nothing applies a function yet (Modules 7–8).</li>
+      <li>Avoid the cost of <code>freeVars</code> at every λ. It's recomputed each time, which is fine for small terms and slow for big ones.</li>
+      <li>Skip renaming entirely. With names, fresh-name generation is unavoidable. Module 6 removes names.</li>
+      <li>Substitute several variables at once (simultaneous substitution). Not needed until Module 19.</li>
+    </ul></div>
+    <div class="can"><h4>Can do now</h4><ul>
+      <li>Compute <code>M[x := N]</code> correctly for any terms.</li>
+      <li>Show exactly where naive substitution goes wrong, and log the renames that prevent it.</li>
+      <li>Rely on the FV law, α-compatibility and the Substitution Lemma, all tested on random terms.</li>
+      <li>Explain binder / scope / free / bound / capture without mixing them up (vocabulary web).</li>
+    </ul></div>
+  </div>
+</section>
+
+<section id="s06">
+  <h2><span class="num">06</span>Run It</h2>
+  <div class="run-box"><h4>Run the tests</h4>
+  <pre><code>cd alonzo/track1-engine/05_substitution
+npm test</code></pre>
+  <div class="desc">12 new tests + 53 carried from Modules 1–4. Actual summary:</div>
+<pre><code><span class="o"># tests 65
+# pass 65
+# fail 0</span></code></pre>
+  <div class="desc">Then:</div>
+  <pre><code>npm run demo</code></pre>
+  <div class="desc">Actual output:</div>
+<pre><code><span class="o">== When naive substitution is fine ==
+(λy. x y)[x := f]
+  naive   : λy. f y                FV = {f}
+  correct : λy. f y                FV = {f}
+  same meaning? true
+(λx. x)[x := f]
+  naive   : λx. x                  FV = {}
+  correct : λx. x                  FV = {}
+  same meaning? true
+
+== Capture ==
+(λy. x)[x := y]
+  naive   : λy. y                  FV = {}
+  correct : λy1. y                 FV = {y}   renamed y→y1
+  same meaning? false
+(λy. x y)[x := y z]
+  naive   : λy. y z y              FV = {z}
+  correct : λy1. y z y1            FV = {y, z}   renamed y→y1
+  same meaning? false
+(λy. x y1)[x := y]
+  naive   : λy. y y1               FV = {y1}
+  correct : λy2. y y1              FV = {y, y1}   renamed y→y2
+  same meaning? false
+
+== How often does naive substitution go wrong? ==
+random M[x := N], 3000 trials:
+  a binder of M is free in N (capture possible): 1334
+  naive result has a different meaning:          414
+  ...of which a free-variable check would notice: 192</span></code></pre></div>
+  <div class="callout red"><div class="label">Getting a blank or broken result?</div>
+  <ul>
+    <li><strong>"Why <code>y1</code> and not <code>y'</code>?"</strong> It's a naming convention (DECISIONS.md, category (c)). Any name that's free in neither N nor the body would be correct.</li>
+    <li><strong>"(λx. x)[x := f] didn't change!"</strong> Correct: that <code>λx</code> shadows x, so the body has no free x to replace.</li>
+    <li><strong>Test count 12, not 65:</strong> use <code>npm test</code>, which also runs <code>tests/*.test.ts</code>.</li>
+  </ul></div>
+  <a class="lab-link" data-lab="05">Open Lab 05: Substitution Workbench</a><span class="lab-note"></span>
+</section>
+
+<section id="s07">
+  <h2><span class="num">07</span>Brain Exercise</h2>
+  <div class="brain"><div class="label">Think before you reveal</div>
+  <p>A tempting shortcut for catching capture bugs: "compute FV of the result both ways. If they differ, something got captured." The demo shows this caught only
+  <strong>192 of 414</strong> real captures.</p>
+  <p><strong>Construct the smallest M and N you can where naive substitution changes the meaning, but the naive and correct results have <em>exactly the same</em> free variables.
+  Explain why the FV check is blind to it.</strong></p>
+  <a class="lab-link" data-lab="05">The Lab's checker verifies your answer</a>
+  <details><summary>Reveal the answer</summary>
+  <p>Take <code>M = (λy. x) y</code>, <code>x</code> and <code>N = y</code>, i.e. <code>((λy. x) y)[x := y]</code>:</p>
+<pre><code>naive   : (λy. y) y      FV = {y}
+correct : (λy1. y) y     FV = {y}</code></pre>
+  <p>(Verified with the engine: <code>alphaEquivalent</code> says they differ.) The pasted <code>y</code> inside <code>λy</code> <em>was</em> captured. The naive result applies the identity
+  to y, while the correct one applies a constant function. But M already had a free <code>y</code> outside the λ (the argument), so y still shows up in FV either way.</p>
+  <p>FV is a <em>set of names</em>, and capture is about <em>which occurrence points where</em>. A set can't see that one of two y's changed owner. The robust check is
+  structural: compare binding structure with <code>alphaEquivalent</code>, or use Module 6's de Bruijn indices, where capture can't happen at all.</p></details></div>
+</section>
+
+<section id="s08">
+  <h2><span class="num">08</span>There Are No Dumb Questions</h2>
+  <div class="qa">
+    <p class="q">Is capture a real-world bug or just a textbook curiosity?</p>
+    <p class="a">It's real. Macro systems face it: a C preprocessor macro that declares a temporary variable can collide with a caller's variable of the same name. So do hygienic macros in Scheme and Rust, and every compiler pass that inlines functions (Track 2 C9). "Hygiene" is capture-avoidance under another name.</p>
+    <p class="q">Why not always rename every binder to something fresh? Then capture is impossible.</p>
+    <p class="a">That works (it's what <code>canonicalize</code> from Module 4 does). But terms become unreadable fast (<code>λv17. v17 v3</code>), and every substitution would allocate a whole new tree. Renaming only when needed keeps output recognizable and shares unchanged subtrees.</p>
+    <p class="q">Why must the fresh name avoid the body's free variables, not just N's?</p>
+    <p class="a">Because the renamed binder would capture <em>those</em>. In <code>(λy. x y1)[x := y]</code>, renaming to <code>y1</code> would make the body's free <code>y1</code> bound. The engine skips to <code>y2</code>. It's in the demo, and it's a classic bug in hand-written substitution.</p>
+    <p class="q">Does the order matter in <code>P[y := z][x := N]</code>?</p>
+    <p class="a">Yes. First rename (making room), then substitute. Reversed, you'd push N under the old binder and capture it anyway. The Substitution Lemma test would catch a swapped implementation.</p>
+    <p class="q">Is there a way to avoid all this renaming?</p>
+    <p class="a">Yes: get rid of bound <em>names</em>. With de Bruijn indices (Module 6), variables are "the binder k levels out," and capture becomes impossible by construction. The price is index shifting, which has its own classic bugs.</p>
+  </div>
+</section>
+
+<section id="s09">
+  <h2><span class="num">09</span>What's Next</h2>
+  <p>Two modules in a row have fought the same enemy: <em>names</em>. Module 4 needed a special algorithm to see that <code>λx. x</code> and <code>λy. y</code> are equal.
+  Module 5 needed fresh-name generation to stop capture. <strong>Module 6</strong> removes the problem at its root. It replaces every bound variable with a number,
+  its <strong>de Bruijn index</strong> ("how many λs out is my binder?"). α-equivalent terms then become <em>literally identical</em> trees, and
+  substitution needs no renaming, only careful index <em>shifting</em>. It closes Phase 1. After that, the engine is ready to compute.</p>
+</section>
+
+<div class="module-nav">
+  <a href="../04_alpha/tutorial.html"><span class="dir">← Previous</span>Module 4: Free Variables &amp; α-Equivalence</a>
+  <a class="next" href="../06_de_bruijn/tutorial.html"><span class="dir">Next →</span>Module 6: de Bruijn Indices</a>
+</div>
+</main>
+<footer>Alonzo · Track 1 · Module 5 · <a href="DECISIONS.md">DECISIONS.md</a> · <a href="concept_how_they_connect.html">Vocabulary web</a> · <a href="../../GLOSSARY.md">Glossary</a></footer>
+<script src="../../shared/course.js"></script>
+</body>
+</html>

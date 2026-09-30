@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Concept: β-Normal Form</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700;800&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../shared/course.css">
+</head>
+<body>
+<nav class="topbar"><a class="brand" href="../../index.html">λ <span>Alonzo</span></a><a href="concept_how_they_connect.html">Vocabulary hub</a><a href="tutorial.html">Module 11 tutorial</a><span class="spacer"></span><span class="muted">Vocabulary web · 2 of 5</span></nav>
+<header class="hero">
+  <div class="badge">CONCEPT</div>
+  <h1>β-normal form</h1>
+  <p class="tagline">No β-redex anywhere, including under λ. What normal order produces.</p>
+</header>
+<main class="container">
+<section>
+  <h2>In one sentence</h2>
+  <p>A term is in <strong>β-normal form</strong> when no sub-term has the shape <code>(λx. M) N</code>. It's what "the normal form" means by default.</p>
+  <div class="analogy"><div class="big">Every envelope in the pile has been opened, even the ones tucked inside folders.</div><p>Whatever is left can't compute any further.</p></div>
+</section>
+<section>
+  <h2>See it</h2>
+  <pre><code><span class="o">x ((λa. a) b)                   ·     ·    ✓     ✓    ·</span></code></pre><p class="muted">Head normal, but <em>not</em> β-normal: a redex remains inside the argument.</p>
+</section>
+<section>
+  <h2>Common mix-up</h2>
+  <div class="callout red"><div class="label">Wrong</div><p>"If a term's head is a variable, it's in normal form."</p></div>
+  <div class="callout green"><div class="label">Right</div><p>That's <em>head</em> normal form. β-normal form also requires that the arguments (and everything under every λ) be redex-free.</p></div>
+</section>
+<section>
+  <div class="callout accent"><div class="label">How this connects to the other terms</div><p>Stricter: <a href="concept_beta_eta_normal_form.html">βη-normal form</a>. Looser: <a href="concept_head_normal_form.html">head normal form</a>. Unique when it exists, by Church–Rosser (Module 10).</p></div>
+  <p>Siblings: <a href="concept_beta_eta_normal_form.html">βη-normal form</a> · <a href="concept_head_normal_form.html">Head normal form</a> · <a href="concept_weak_head_normal_form.html">Weak head normal form</a> · <a href="concept_value.html">Value</a></p>
+  <p><a href="concept_how_they_connect.html">→ See all 5 terms side by side</a></p>
+</section>
+</main>
+<footer>Alonzo · Module 11 vocabulary web</footer>
+</body>
+</html>

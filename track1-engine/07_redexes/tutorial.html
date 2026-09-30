@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Redex Anatomy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700;800&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../shared/course.css">
+</head>
+<body>
+<nav class="topbar"><a class="brand" href="../../index.html">λ <span>Alonzo</span></a><a href="../../prerequisites.html">Prerequisites</a><a href="../../GLOSSARY.md">Glossary</a><a href="DECISIONS.md">Decisions</a><span class="spacer"></span><span class="muted">Track 1 · Phase 2 · Module 7 of 34</span></nav>
+
+<header class="hero">
+  <div class="badge">MODULE 07</div>
+  <h1>Redex <span>Anatomy</span></h1>
+  <p class="tagline">Before an engine can compute, it must answer one question: <em>where</em> in this term can a step happen? The answer has an exact, finite shape: the redexes.</p>
+  <div class="hero-grid">
+    <div class="hero-stat"><div class="num">2</div><div class="label">redex shapes (β, η)</div></div>
+    <div class="hero-stat"><div class="num">4</div><div class="label">named positions</div></div>
+    <div class="hero-stat"><div class="num">89/89</div><div class="label">tests passing</div></div>
+  </div>
+</header>
+
+<main class="container">
+
+<section id="s00">
+  <h2><span class="num">00</span>Prerequisites</h2>
+  <div class="prereq-bar">
+    <a class="tag" href="../../prerequisites/p6_rewriting_systems.html#rewrite">P6.1 redexes in rewriting</a>
+    <a class="tag" href="../../prerequisites/p6_rewriting_systems.html#normal-form">P6.2 normal forms</a>
+    <a class="tag" href="../../prerequisites/p6_rewriting_systems.html#choice">P6.3 choosing a redex</a>
+    <a class="tag" href="../../prerequisites/p3_trees_and_recursion.html#recursion-on-trees">P3.3 recursion</a>
+  </div>
+  <p>From the course: <a href="../04_alpha/tutorial.html#s04">paths</a> (Module 4) name positions in a tree, and <a href="../04_alpha/tutorial.html">free variables</a> decide whether <code>λx. M x</code> is an η-redex.</p>
+</section>
+
+<section id="s01">
+  <h2><span class="num">01</span>The Big Analogy</h2>
+  <div class="analogy">
+    <div class="big">A redex is a sealed envelope stapled to its letter.</div>
+    <p>A λ-abstraction is an envelope with instructions inside: "whatever you give me, call it x, then…". An application <code>M N</code> staples a
+    letter N to M. If M is an <em>envelope</em>, the pair is ready to be opened: tear the envelope, drop the letter in wherever the instructions say "x".
+    That ready-to-open pair, <code>(λx. …) N</code>, is a <strong>β-redex</strong>.</p>
+    <p>If M is just a name (<code>f N</code>), there's nothing to open. You're holding a letter addressed to someone who isn't here. A term can contain many
+    ready envelopes, nested and side by side. This module doesn't open any. It walks the whole pile and makes a numbered list: where each ready envelope is,
+    which is <strong>first</strong> in reading order, which are <strong>innermost</strong>, and which one sits at the very <strong>head</strong> of the pile.</p>
+  </div>
+  <p>The second shape, the <strong>η-redex</strong> <code>λx. M x</code>, is an envelope whose instructions are only "forward whatever you get to M". It's a
+  middleman that can be removed. More on η in Module 11.</p>
+</section>
+
+<section id="s02">
+  <h2><span class="num">02</span>What Happens, Step by Step</h2>
+  <ol class="steps">
+    <li><code>findRedexes(t)</code> walks the tree in <strong>pre-order</strong>: node, then function part, then argument.</li>
+    <li>At each node it asks: is this an application whose function is a λ? If so, it records a β-redex with its path.</li>
+    <li>If η was requested, it also asks: is this <code>λx. M x</code> with <code>x</code> not free in <code>M</code>?</li>
+    <li>Pre-order means the list is already in reading order, outer before inner. The <strong>first</strong> entry is the leftmost-outermost redex.</li>
+    <li>The <strong>leftmost-innermost</strong> is the first entry that contains no other redex (no other path extends its path).</li>
+    <li>The <strong>head redex</strong>: skip leading λs, then walk down the function spine. If the head of the spine is a λ, the application just above it is the head redex.</li>
+    <li>No β-redexes at all means the term is in <strong>β-normal form</strong>: finished.</li>
+  </ol>
+</section>
+
+<section id="s03">
+  <h2><span class="num">03</span>The Map: One Term, Two Redexes, Four Names</h2>
+  <p>Real <code>npm run demo</code> output for <code>(λx. x x) ((λy. y) z)</code>. The brackets mark the redex:</p>
+<pre><code><span class="o">  β at ε          [(λx. x x) ((λy. y) z)]            leftmost-outermost, head, weak-head
+  β at arg        (λx. x x) ([(λy. y) z])            leftmost-innermost</span></code></pre>
+  <div class="diagram">
+    <svg viewBox="0 0 620 250" width="620" role="img" aria-label="Redexes in (λx. x x) ((λy. y) z)">
+      <g stroke="#3a3a3f" stroke-width="2">
+        <line x1="300" y1="40" x2="190" y2="95"/><line x1="300" y1="40" x2="420" y2="95"/>
+        <line x1="190" y1="95" x2="190" y2="150"/><line x1="190" y1="150" x2="150" y2="205"/><line x1="190" y1="150" x2="230" y2="205"/>
+        <line x1="420" y1="95" x2="370" y2="150"/><line x1="420" y1="95" x2="480" y2="150"/><line x1="370" y1="150" x2="370" y2="205"/>
+      </g>
+      <rect x="120" y="14" width="400" height="224" rx="14" fill="none" stroke="#d4a017" stroke-width="2" stroke-dasharray="6 4"/>
+      <rect x="330" y="72" width="185" height="152" rx="12" fill="none" stroke="#82aaff" stroke-width="2" stroke-dasharray="6 4"/>
+      <g font-family="JetBrains Mono, monospace" font-size="15" text-anchor="middle" dominant-baseline="central">
+        <circle cx="300" cy="40" r="17" fill="#18181b" stroke="#d4a017" stroke-width="2"/><text x="300" y="40" fill="#d4a017">@</text>
+        <rect x="165" y="81" width="50" height="28" rx="14" fill="#18181b" stroke="#d4a017" stroke-width="2"/><text x="190" y="95" fill="#d4a017">λx</text>
+        <circle cx="190" cy="150" r="16" fill="#18181b" stroke="#3a3a3f" stroke-width="2"/><text x="190" y="150" fill="#9a9992">@</text>
+        <text x="150" y="205" fill="#eeece6">x</text><text x="230" y="205" fill="#eeece6">x</text>
+        <circle cx="420" cy="95" r="17" fill="#18181b" stroke="#82aaff" stroke-width="2"/><text x="420" y="95" fill="#82aaff">@</text>
+        <rect x="345" y="136" width="50" height="28" rx="14" fill="#18181b" stroke="#82aaff" stroke-width="2"/><text x="370" y="150" fill="#82aaff">λy</text>
+        <text x="370" y="205" fill="#eeece6">y</text><text x="480" y="150" fill="#eeece6">z</text>
+      </g>
+      <g font-family="Inter, sans-serif" font-size="12">
+        <text x="130" y="30" fill="#d4a017">path ε: leftmost-outermost · head</text>
+        <text x="342" y="240" fill="#82aaff">path arg: leftmost-innermost</text>
+      </g>
+    </svg>
+    <div class="caption">A redex is an <code>@</code> node whose left child is a <code>λ</code>. Here there are two, one nested inside the other's argument.</div>
+  </div>
+  <a class="lab-link" data-lab="07" data-term="(λx. x x) ((λy. y) z)">Highlight them in the Lab</a><span class="lab-note"></span>
+</section>
+
+<section id="s04">
+  <h2><span class="num">04</span>The Code, Explained</h2>
+  <h3>The whole finder is one pre-order walk</h3>
+  <p class="file-label">src/redex.ts</p>
+<pre><code><span class="k">export function</span> findRedexes(t: Term, kinds = [<span class="s">"beta"</span>]): Redex[] {
+  <span class="k">const</span> out: Redex[] = [];
+  (<span class="k">function</span> go(u: Term, path: Step[]): <span class="k">void</span> {
+    <span class="k">if</span> (wantBeta &amp;&amp; isBetaRedex(u)) out.push({ kind: <span class="s">"beta"</span>, path: [...path], term: u });
+    <span class="k">if</span> (wantEta &amp;&amp; isEtaRedex(u)) out.push({ kind: <span class="s">"eta"</span>, path: [...path], term: u });
+    <span class="k">if</span> (u.kind === <span class="s">"lam"</span>) go(u.body, [...path, <span class="s">"body"</span>]);
+    <span class="k">else if</span> (u.kind === <span class="s">"app"</span>) { go(u.fn, [...path, <span class="s">"fn"</span>]); go(u.arg, [...path, <span class="s">"arg"</span>]); }
+  })(t, []);
+  <span class="k">return</span> out;
+}</code></pre>
+  <p>Record the node <em>before</em> visiting its children, and visit the function before the argument. That order is reading order.</p>
+
+  <h3>The two shapes</h3>
+<pre><code><span class="k">export function</span> isBetaRedex(t: Term) { <span class="k">return</span> t.kind === <span class="s">"app"</span> &amp;&amp; t.fn.kind === <span class="s">"lam"</span>; }
+<span class="k">export function</span> isEtaRedex(t: Term) {
+  <span class="k">return</span> t.kind === <span class="s">"lam"</span> &amp;&amp; t.body.kind === <span class="s">"app"</span> &amp;&amp; t.body.arg.kind === <span class="s">"var"</span>
+    &amp;&amp; t.body.arg.name === t.param &amp;&amp; !freeVars(t.body.fn).has(t.param);
+}</code></pre>
+  <p>The last condition matters: <code>λx. x x</code> <em>looks</em> like "forward x to something," but that something is <code>x</code> itself. It isn't a middleman.</p>
+
+  <h3>The head: walk down the spine</h3>
+<pre><code><span class="k">function</span> spineRedex(u: Term, path: Step[]): Redex | <span class="k">null</span> {
+  <span class="k">while</span> (u.kind === <span class="s">"app"</span>) {
+    <span class="k">if</span> (u.fn.kind === <span class="s">"lam"</span>) <span class="k">return</span> { kind: <span class="s">"beta"</span>, path: [...path], term: u };
+    path.push(<span class="s">"fn"</span>);
+    u = u.fn;
+  }
+  <span class="k">return null</span>;
+}</code></pre>
+  <p><code>M N1 N2 N3</code> is <code>((M N1) N2) N3</code>. The <em>spine</em> is the chain of <code>fn</code> links, and <code>M</code> is at the bottom. If M is a λ, the application
+  holding it is the head redex. If M is a variable, the loop falls off the end: <strong>no head redex</strong>, no matter what's in the arguments.</p>
+  <div class="bullets"><div class="label">BULLET POINTS</div><ul>
+    <li>β-redex: an application whose function is a λ. η-redex: <code>λx. M x</code> with x not free in M.</li>
+    <li>Pre-order lists redexes in reading order, so the first is leftmost-outermost.</li>
+    <li>The head redex, if there is one, is the leftmost-outermost redex (tested on 3000 terms).</li>
+    <li>No β-redexes = β-normal form. A variable at the head = <em>head</em> normal form, even with redexes elsewhere.</li>
+  </ul></div>
+</section>
+
+<section id="s05">
+  <h2><span class="num">05</span>Limits: What You Cannot Do Yet</h2>
+  <div class="compare">
+    <div class="cant"><h4>Can't do yet</h4><ul>
+      <li>Actually open an envelope: contract a redex (Module 8).</li>
+      <li>Choose which redex to contract, or repeat until done (Module 9).</li>
+      <li>Say what happens to <em>other</em> redexes after one is contracted: residuals (Module 10).</li>
+    </ul></div>
+    <div class="can"><h4>Can do now</h4><ul>
+      <li>List every β- and η-redex by path.</li>
+      <li>Name the leftmost-outermost, leftmost-innermost, head and weak-head redexes.</li>
+      <li>Decide β-normal form, and highlight any sub-term inside the printed text.</li>
+    </ul></div>
+  </div>
+</section>
+
+<section id="s06">
+  <h2><span class="num">06</span>Run It</h2>
+  <div class="run-box"><h4>Run the tests</h4>
+  <pre><code>cd alonzo/track1-engine/07_redexes
+npm test</code></pre>
+  <div class="desc">12 new + 77 carried from Modules 1–6. Actual summary:</div>
+<pre><code><span class="o"># tests 89
+# pass 89
+# fail 0</span></code></pre>
+  <div class="desc">Then <code>npm run demo</code>. Actual output (first sections abridged):</div>
+<pre><code><span class="o">(λx. y) ((λx. x x) (λx. x x))
+  β at ε          [(λx. y) ((λx. x x) λx. x x)]      leftmost-outermost, head, weak-head
+  β at arg        (λx. y) ([(λx. x x) λx. x x])      leftmost-innermost
+
+λx. (λy. y) x z
+  β at body.fn    λx. [(λy. y) x] z                  leftmost-outermost, leftmost-innermost, head
+
+x ((λa. a) b) ((λc. c) d)
+  β at fn.arg     x ([(λa. a) b]) ((λc. c) d)        leftmost-outermost, leftmost-innermost
+  β at arg        x ((λa. a) b) ([(λc. c) d])
+
+(λf. f) (λx. g x)
+  β at ε          [(λf. f) λx. g x]                  leftmost-outermost, leftmost-innermost, head, weak-head
+  η at arg        (λf. f) [λx. g x]
+
+λx y z. x z (y z)   (no redexes)  → β-normal form
+
+== How many redexes do random terms have? (2000 terms) ==
+   0 redexes: 1198 terms
+   1 redexes: 399 terms
+   2 redexes: 242 terms
+   3 redexes: 110 terms
+   4 redexes: 39 terms
+   5 redexes: 7 terms
+   6 redexes: 4 terms
+   7 redexes: 1 terms
+  terms with a head redex: 547</span></code></pre></div>
+  <div class="callout red"><div class="label">Getting a blank or broken result?</div>
+  <ul>
+    <li><strong>"<code>λx. (λy. y) x z</code> has no weak-head redex?"</strong> Correct. It starts with λ, and weak-head means "never look under a binder". Its <em>head</em> redex is at <code>body.fn</code>.</li>
+    <li><strong>η-redexes don't show:</strong> they're off by default. Pass <code>["beta", "eta"]</code> (or tick the Lab's box).</li>
+    <li><strong>"<code>subtermAt</code> … does not exist":</strong> the path doesn't fit the tree, e.g. <code>fn</code> on a λ. Paths come from <code>findRedexes</code>, so don't type them by hand.</li>
+  </ul></div>
+  <a class="lab-link" data-lab="07">Open Lab 07: Redex Finder</a><span class="lab-note"></span>
+</section>
+
+<section id="s07">
+  <h2><span class="num">07</span>Brain Exercise</h2>
+  <div class="brain"><div class="label">Think before you reveal</div>
+  <p>The tests show that whenever a term <em>has</em> a head redex, it is the leftmost-outermost redex.</p>
+  <p><strong>So can a term have redexes but no head redex at all? If so, write one. What does that tell you about whether any amount of computation could change
+  the "outline" of that term?</strong> The Lab's checker reads whatever term you type.</p>
+  <a class="lab-link" data-lab="07">Test your term in the Lab</a>
+  <details><summary>Reveal the answer</summary>
+  <p>Yes. Any term whose head is a <strong>variable</strong>: <code>x ((λa. a) b) ((λc. c) d)</code> has two redexes but no head redex (the demo shows it). Its shape is
+  "<code>x</code> applied to two things," and <code>x</code> is not an envelope, so nothing can ever be opened at the head.</p>
+  <p>Contracting redexes in the arguments changes the <em>arguments</em>, never the fact that the whole term is <code>x □ □</code>. That fixed outline is called
+  <strong>head normal form</strong>, and it's why HNF is the right notion of "a meaningful answer" in the theory of the λ-calculus (Module 11, and Böhm trees in Module 34).
+  Lazy evaluators stop even earlier, at <em>weak</em> head normal form, and don't bother with the arguments until they're needed.</p></details></div>
+</section>
+
+<section id="s08">
+  <h2><span class="num">08</span>There Are No Dumb Questions</h2>
+  <div class="qa">
+    <p class="q">Why is it called a "redex"?</p>
+    <p class="a">It's short for <em>reducible expression</em>, the term-rewriting word for a sub-term matching the left side of a rule (<a href="../../prerequisites/p6_rewriting_systems.html#rewrite">P6.1</a>). What it becomes after the step is the <em>contractum</em> (Module 8).</p>
+    <p class="q">Is <code>f ((λx. x) y)</code> a redex?</p>
+    <p class="a">The whole thing isn't (its function part is <code>f</code>, a variable), but it <em>contains</em> one: <code>(λx. x) y</code> at path <code>arg</code>. "Redex" always refers to the exact sub-term.</p>
+    <p class="q">Why do we need both "outermost" and "innermost"?</p>
+    <p class="a">Because they give the two classic evaluation orders. Outermost-first is normal order (and, roughly, lazy languages). Innermost-first is applicative order (and, roughly, strict languages like OCaml and JavaScript). Module 9 races them, and one of them loops forever on a term the other finishes.</p>
+    <p class="q">Can two redexes overlap without one being inside the other?</p>
+    <p class="a">No. A redex is a sub-<em>tree</em>, and two sub-trees are either nested or disjoint. That's why path prefixes are enough to decide "inside."</p>
+  </div>
+</section>
+
+<section id="s09">
+  <h2><span class="num">09</span>What's Next</h2>
+  <p>You can point at every envelope. <strong>Module 8</strong> opens one. It contracts a chosen redex with Module 5's capture-avoiding substitution, and defines
+  one-step reduction precisely as "contract a redex inside a <em>context</em> <code>C[□]</code>". Contexts are built as real data: the term with a hole where the redex was.
+  It also introduces the first vocabulary web of Phase 2, for redex, contractum, reduct and context.</p>
+</section>
+
+<div class="module-nav">
+  <a href="../06_de_bruijn/tutorial.html"><span class="dir">← Previous</span>Module 6: de Bruijn Indices</a>
+  <a class="next" href="../08_beta/tutorial.html"><span class="dir">Next →</span>Module 8: β-Contraction &amp; One-Step Reduction</a>
+</div>
+</main>
+<footer>Alonzo · Track 1 · Module 7 · <a href="DECISIONS.md">DECISIONS.md</a> · <a href="../../GLOSSARY.md">Glossary</a></footer>
+<script src="../../shared/course.js"></script>
+</body>
+</html>

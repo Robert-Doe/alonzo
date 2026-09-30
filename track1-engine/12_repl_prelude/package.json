@@ -1,0 +1,10 @@
+{
+  "name": "alonzo-12-repl-prelude",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --experimental-strip-types --no-warnings --test test.ts \"tests/*.test.ts\"",
+    "demo": "node --experimental-strip-types --no-warnings demo.ts",
+    "repl": "node --experimental-strip-types --no-warnings repl-cli.ts"
+  }
+}

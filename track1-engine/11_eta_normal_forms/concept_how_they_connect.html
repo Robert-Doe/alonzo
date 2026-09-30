@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Normal Forms Vocabulary Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700;800&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../shared/course.css">
+<style>
+  .defgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin: 20px 0; }
+  .defgrid a { display: block; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; text-decoration: none; color: var(--text); }
+  .defgrid a:hover { border-color: var(--brand); }
+  .defgrid .t { font-family: var(--display); font-weight: 800; color: var(--brand); font-size: 1.1rem; }
+  .quiz-row { display: grid; grid-template-columns: 1fr 190px; gap: 10px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .quiz-row select { font: 14px var(--body); background: var(--bg-elevated); color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 5px; }
+  .quiz-row .res { grid-column: 1 / -1; font-size: 14px; }
+  button.check { background: var(--brand); color: #1a1305; border: 0; border-radius: 8px; padding: 9px 18px; font: 600 14px var(--body); cursor: pointer; margin-top: 14px; }
+  @media (max-width: 560px) { .quiz-row { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<nav class="topbar"><a class="brand" href="../../index.html">λ <span>Alonzo</span></a><a href="concept_how_they_connect.html">Vocabulary hub</a><a href="tutorial.html">Module 11 tutorial</a><span class="spacer"></span><span class="muted">Vocabulary web · hub</span></nav>
+<header class="hero">
+  <div class="badge">VOCABULARY HUB</div>
+  <h1>βη-NF · β-NF · HNF · WHNF · <span>Value</span></h1>
+  <p class="tagline">Five meanings of "finished". They nest inside each other, and each has a term that sits in it but not in the next.</p>
+</header>
+<main class="container">
+<section><h2>Definitions, side by side</h2>
+<div class="defgrid">
+  <a href="concept_beta_eta_normal_form.html"><div class="t">βη-normal form</div><div>No β-redex and no η-redex anywhere. The strictest notion of finished.</div></a>
+  <a href="concept_beta_normal_form.html"><div class="t">β-normal form</div><div>No β-redex anywhere, including under λ. What normal order produces.</div></a>
+  <a href="concept_head_normal_form.html"><div class="t">Head normal form</div><div>λx1…xn. y M1 … Mk: a variable sits at the head. Arguments may still compute.</div></a>
+  <a href="concept_weak_head_normal_form.html"><div class="t">Weak head normal form</div><div>A λ, or a variable applied to arguments. Where lazy evaluation stops.</div></a>
+  <a href="concept_value.html"><div class="t">Value</div><div>In call-by-value, a λ or a variable: something that may be passed as an argument.</div></a>
+</div></section>
+<section><h2>One picture: where each term lives</h2>
+<div class="diagram"><svg viewBox="0 0 660 280" width="660" role="img" aria-label="Nested normal forms"><g fill="none" stroke-width="2"><rect x="10" y="10" width="640" height="260" rx="16" stroke="#9a9992"/><rect x="40" y="50" width="600" height="205" rx="14" stroke="#82aaff"/><rect x="70" y="90" width="300" height="150" rx="12" stroke="#c792ea"/><rect x="100" y="130" width="180" height="95" rx="10" stroke="#d4a017"/><rect x="330" y="62" width="295" height="178" rx="12" stroke="#4ade80" stroke-dasharray="6 4"/></g><g font-family="Inter, sans-serif" font-size="13"><text x="22" y="32" fill="#9a9992">all terms · e.g. (λx. x) y</text><text x="52" y="72" fill="#82aaff">WHNF · λx. (λy. y) x</text><text x="82" y="112" fill="#c792ea">HNF · x ((λa. a) b)</text><text x="112" y="152" fill="#d4a017">β-NF · λx. f x</text><text x="112" y="200" fill="#eeece6">βη-NF · f</text><text x="432" y="82" fill="#4ade80">values (CBV)</text><text x="432" y="102" fill="#9a9992">λ-abstractions, variables</text><text x="432" y="190" fill="#9a9992">inside WHNF, but cuts</text><text x="432" y="206" fill="#9a9992">across HNF and β-NF</text></g><rect x="108" y="180" width="120" height="32" rx="8" fill="none" stroke="#eeece6" stroke-width="1.5"/></svg><div class="caption">Nested: βη-NF ⊆ β-NF ⊆ HNF ⊆ WHNF (each example sits in its box but not the next inner one). Values (dashed) lie inside WHNF and overlap the inner boxes: <code>f</code> and <code>λx. f x</code> are values, <code>x ((λa. a) b)</code> is not.</div></div></section>
+<section><h2>Commonly confused pairs</h2><div class="table-wrap"><table class="data">
+<tr><th>Pair</th><th>The wrong statement</th><th>The correction</th></tr>
+<tr><td>β-NF vs βη-NF</td><td>"λx. f x is fully simplified."</td><td>It's β-normal but η-reduces to <code>f</code>.</td></tr>
+<tr><td>HNF vs WHNF</td><td>"λx. (λy. y) x is in head normal form: it starts with λ."</td><td>Starting with λ gives WHNF. HNF looks under the λ, where the head is a redex.</td></tr>
+<tr><td>WHNF vs finished</td><td>"It's in WHNF, so evaluation is done."</td><td>Only the outer shape is fixed. <code>λx. Ω</code> is WHNF with an infinite body.</td></tr>
+<tr><td>value vs normal form</td><td>"Values are normal forms."</td><td><code>λx. (λy. y) x</code> is a value, not normal. <code>x y</code> is normal, not a value.</td></tr>
+<tr><td>HNF vs β-NF</td><td>"Head variable means done."</td><td>Arguments may still hold redexes: <code>x ((λa. a) b)</code>.</td></tr>
+</table></div></section>
+<section><h2>Scenario quiz: which term fits?</h2><div id="quiz"></div><button class="check" id="check">Check answers</button><p id="score" class="muted"></p></section>
+<div class="module-nav"><a href="tutorial.html"><span class="dir">← Back to</span>Module 11 tutorial</a><a class="next" href="concept_beta_eta_normal_form.html"><span class="dir">Start the tour →</span>βη-normal form</a></div>
+</main>
+<footer>Alonzo · Module 11 vocabulary web</footer>
+<script>
+(function () {
+  var O = ["βη-normal form", "β-normal form", "Head normal form", "Weak head normal form", "Value"];
+  var Q = [["<code>λx. f x</code>, the <em>tightest</em> form it is in.", "β-normal form", "No β-redex, but it is an η-redex, so not βη-normal."], ["<code>x ((λa. a) b)</code>, the tightest form.", "Head normal form", "Its head is the variable x, but a redex hides in the argument."], ["<code>λx. (λy. y) x</code>, the tightest of HNF / WHNF.", "Weak head normal form", "It starts with λ, but under it the head is a redex."], ["What call-by-value may pass into <code>(λx. M) □</code>.", "Value", "A λ or a variable."], ["<code>f</code>, the tightest form.", "βη-normal form", "Nothing left, not even η."], ["What Haskell's <code>seq</code> forces its first argument to.", "Weak head normal form", "Just enough to know the outer constructor or λ."]];
+  var box = document.getElementById("quiz");
+  var rows = Q.map(function (q, i) {
+    var row = document.createElement("div"); row.className = "quiz-row";
+    var p = document.createElement("div"); p.innerHTML = (i + 1) + ". " + q[0];
+    var s = document.createElement("select");
+    s.innerHTML = '<option value="">choose…</option>' + O.map(function (o) { return "<option>" + o + "</option>"; }).join("");
+    var res = document.createElement("div"); res.className = "res";
+    row.appendChild(p); row.appendChild(s); row.appendChild(res); box.appendChild(row);
+    return { s: s, res: res, q: q };
+  });
+  document.getElementById("check").addEventListener("click", function () {
+    var right = 0;
+    rows.forEach(function (x) {
+      var ok = x.s.value === x.q[1]; if (ok) right++;
+      x.res.innerHTML = (ok ? '<span style="color:var(--green)">✓ ' : '<span style="color:var(--red)">✗ Answer: <b>' + x.q[1] + '</b>. ') + x.q[2] + '</span>';
+    });
+    document.getElementById("score").textContent = right + " / " + Q.length + " correct";
+  });
+})();
+</script>
+</body>
+</html>

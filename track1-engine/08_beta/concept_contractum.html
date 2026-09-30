@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Concept: Contractum</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700;800&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../shared/course.css">
+</head>
+<body>
+<nav class="topbar"><a class="brand" href="../../index.html">λ <span>Alonzo</span></a><a href="concept_how_they_connect.html">Vocabulary hub</a><a href="tutorial.html">Module 8 tutorial</a><span class="spacer"></span><span class="muted">Vocabulary web · 2 of 4</span></nav>
+<header class="hero">
+  <div class="badge">CONCEPT</div>
+  <h1>Contractum</h1>
+  <p class="tagline">What a redex turns into: the rule's right side, e.g. M[x := N] for β.</p>
+</header>
+<main class="container">
+<section>
+  <h2>In one sentence</h2>
+  <p>The <strong>contractum</strong> is the result of applying the rule to the redex <em>alone</em>: <code>(λx. M) N</code> ↦ <code>M[x := N]</code>. It replaces the redex and nothing else.</p>
+  <div class="analogy"><div class="big">The contractum is the envelope's contents with the letter already dropped in.</div><p>It's local. It knows nothing about the rest of the pile.</p></div>
+</section>
+<section>
+  <h2>See it</h2>
+  <pre><code><span class="o">λz. [(λx. λz. x z) z]
+  context    C[□] = λz. □
+  redex           = (λx. λz. x z) z
+  contractum      = λz1. z z1   (renamed z→z1 to avoid capture)
+  reduct  C[…]    = λz. λz1. z z1</span></code></pre><p class="muted">Real demo output. Module 5's capture avoidance happens right here, while building the contractum.</p>
+</section>
+<section>
+  <h2>Common mix-up</h2>
+  <div class="callout red"><div class="label">Wrong</div><p>"The contractum is the new term after the step."</p></div>
+  <div class="callout green"><div class="label">Right</div><p>That's the <em>reduct</em>. The contractum only replaces the redex. For <code>(λx. x x) ((λy. y) z)</code> stepping inside, the contractum is <code>z</code> but the new term is <code>(λx. x x) z</code>.</p></div>
+</section>
+<section>
+  <div class="callout accent"><div class="label">How this connects to the other terms</div><p>Contracting a <a href="concept_redex.html">redex</a> gives the contractum. Plugging it into the same <a href="concept_context.html">context</a> gives the <a href="concept_reduct.html">reduct</a>.</p></div>
+  <p>Siblings: <a href="concept_redex.html">Redex</a> · <a href="concept_context.html">Context</a> · <a href="concept_reduct.html">Reduct</a></p>
+  <p><a href="concept_how_they_connect.html">→ See all 4 terms side by side</a></p>
+</section>
+</main>
+<footer>Alonzo · Module 8 vocabulary web</footer>
+</body>
+</html>

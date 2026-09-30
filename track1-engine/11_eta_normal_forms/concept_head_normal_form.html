@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Concept: Head Normal Form</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700;800&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../shared/course.css">
+</head>
+<body>
+<nav class="topbar"><a class="brand" href="../../index.html">λ <span>Alonzo</span></a><a href="concept_how_they_connect.html">Vocabulary hub</a><a href="tutorial.html">Module 11 tutorial</a><span class="spacer"></span><span class="muted">Vocabulary web · 3 of 5</span></nav>
+<header class="hero">
+  <div class="badge">CONCEPT</div>
+  <h1>Head normal form</h1>
+  <p class="tagline">λx1…xn. y M1 … Mk: a variable sits at the head. Arguments may still compute.</p>
+</header>
+<main class="container">
+<section>
+  <h2>In one sentence</h2>
+  <p>A term is in <strong>head normal form (HNF)</strong> when, after its leading λs, its head is a <em>variable</em>. Nothing can ever change that outline, whatever happens in the arguments.</p>
+  <div class="analogy"><div class="big">The headline of a newspaper is printed. The articles below may still be edited.</div><p>Whatever edits happen, the front page's headline is final.</p></div>
+</section>
+<section>
+  <h2>See it</h2>
+  <pre><code><span class="o">x ((λa. a) b)                   ·     ·    ✓     ✓    ·
+λx. (λy. y) x                   ·     ·    ·     ✓    ✓</span></code></pre><p class="muted">The first is HNF (head <code>x</code>). The second is not: under its λ, the head is a redex.</p>
+</section>
+<section>
+  <h2>Common mix-up</h2>
+  <div class="callout red"><div class="label">Wrong</div><p>"HNF and WHNF differ only in the word 'weak'."</p></div>
+  <div class="callout green"><div class="label">Right</div><p>HNF looks <em>under</em> the leading λs, and WHNF doesn't. <code>λx. (λy. y) x</code> is WHNF (it starts with λ) but not HNF (under that λ the head is a redex).</p></div>
+</section>
+<section>
+  <div class="callout accent"><div class="label">How this connects to the other terms</div><p>Between <a href="concept_beta_normal_form.html">β-normal form</a> (stricter) and <a href="concept_weak_head_normal_form.html">WHNF</a> (looser). Terms with no HNF (like <code>λx. Ω</code>) are called <em>unsolvable</em>, the λ-calculus's notion of "meaningless".</p></div>
+  <p>Siblings: <a href="concept_beta_eta_normal_form.html">βη-normal form</a> · <a href="concept_beta_normal_form.html">β-normal form</a> · <a href="concept_weak_head_normal_form.html">Weak head normal form</a> · <a href="concept_value.html">Value</a></p>
+  <p><a href="concept_how_they_connect.html">→ See all 5 terms side by side</a></p>
+</section>
+</main>
+<footer>Alonzo · Module 11 vocabulary web</footer>
+</body>
+</html>

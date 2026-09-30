@@ -1,0 +1,14 @@
+-- prelude.lam — the standard combinators, loaded at REPL start-up.
+-- Every line "name = term" is a macro (Module 12): expanded before evaluation, never recursive.
+
+I = λx. x                    -- identity
+K = λx y. x                  -- constant: keep the first, drop the second
+KI = λx y. y                 -- keep the second (K*)
+S = λx y z. x z (y z)        -- substitution: S K K = I
+B = λf g x. f (g x)          -- composition
+C = λf x y. f y x            -- flip the arguments
+W = λf x. f x x              -- duplicate the argument
+M = λx. x x                  -- self-application (ω)
+Omega = M M                  -- never finishes: use with fuel
+twice = λf x. f (f x)
+apply = λf x. f x

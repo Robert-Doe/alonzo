@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>β-Contraction & One-Step Reduction</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700;800&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../shared/course.css">
+</head>
+<body>
+<nav class="topbar"><a class="brand" href="../../index.html">λ <span>Alonzo</span></a><a href="../../prerequisites.html">Prerequisites</a><a href="../../GLOSSARY.md">Glossary</a><a href="DECISIONS.md">Decisions</a><a href="concept_how_they_connect.html">Vocabulary web</a><span class="spacer"></span><span class="muted">Track 1 · Phase 2 · Module 8 of 34</span></nav>
+
+<header class="hero">
+  <div class="badge">MODULE 08</div>
+  <h1>β-Contraction &amp; <span>One-Step Reduction</span></h1>
+  <p class="tagline">The engine computes for the first time. One step = take a redex out of its context, contract it, plug the result back in. Every piece of that sentence becomes real data.</p>
+  <div class="hero-grid">
+    <div class="hero-stat"><div class="num">3</div><div class="label">congruence rules</div></div>
+    <div class="hero-stat"><div class="num">2306/2306</div><div class="label">named = nameless steps</div></div>
+    <div class="hero-stat"><div class="num">99/99</div><div class="label">tests passing</div></div>
+  </div>
+</header>
+
+<main class="container">
+
+<section id="s00">
+  <h2><span class="num">00</span>Prerequisites</h2>
+  <div class="prereq-bar">
+    <a class="tag" href="../../prerequisites/p6_rewriting_systems.html#rewrite">P6.1 rewriting</a>
+    <a class="tag" href="../../prerequisites/p6_rewriting_systems.html#relations">P6.4 arrow notation</a>
+    <a class="tag" href="../../prerequisites/p7_inference_rules.html#example">P7.3 congruence rules</a>
+    <a class="tag" href="../../prerequisites/p7_inference_rules.html#derivation-tree">P7.4 derivations</a>
+  </div>
+  <p>From the course: <a href="../05_substitution/tutorial.html">capture-avoiding substitution</a> (Module 5) does the actual work, and <a href="../07_redexes/tutorial.html">Module 7</a> finds where. New words are in the <a href="concept_how_they_connect.html"><strong>vocabulary web</strong></a>: redex, contractum, context, reduct.</p>
+</section>
+
+<section id="s01">
+  <h2><span class="num">01</span>The Big Analogy</h2>
+  <div class="analogy">
+    <div class="big">A reduction step is a mechanic swapping one part in a running engine.</div>
+    <p>The mechanic doesn't rebuild the car. They <strong>unbolt</strong> exactly one part (the <em>redex</em>), carry it to the bench, <strong>rebuild</strong> it there (the
+    <em>contractum</em>), then <strong>bolt</strong> it back into the same socket. The car with the empty socket is the <em>context</em>, and the car afterwards is the <em>reduct</em>.</p>
+    <p>Two details the analogy makes vivid. First, the bench work (substitution) must not mix up two bolts that happen to share a label: that's capture avoidance. Second, bolting the
+    part back in <em>must</em> connect it to whatever is around the socket. A part installed under a λ is supposed to plug into that λ's variable. So plugging deliberately does
+    <em>not</em> avoid capture.</p>
+  </div>
+</section>
+
+<section id="s02">
+  <h2><span class="num">02</span>What Happens, Step by Step</h2>
+  <ol class="steps">
+    <li>Choose a redex by its <strong>path</strong> (from Module 7's list).</li>
+    <li><code>decompose(t, path)</code> walks down the path, building a <strong>context</strong> one layer per step: <code>appL</code>, <code>appR</code> or <code>lam</code>. What's left at the bottom is the redex.</li>
+    <li><code>contract(redex)</code> applies the rule at the root: β gives <code>subst(body, x, arg)</code>, and η gives the function part.</li>
+    <li><code>plug(context, contractum)</code> rebuilds the term around the result. That's the <strong>reduct</strong>.</li>
+    <li>The layers of the context, read from the outside in, are exactly the congruence rules of the step's derivation, ending with β or η.</li>
+    <li><code>oneStepReducts(t)</code> does this once per redex, giving every term reachable in one step.</li>
+  </ol>
+</section>
+
+<section id="s03">
+  <h2><span class="num">03</span>The Map: A Step, Dissected</h2>
+  <p>Real <code>npm run demo</code> output for a redex hidden under a λ and inside an application:</p>
+<pre><code><span class="o">λx. [(λy. y) x] z
+  context    C[□] = λx. □ z
+  redex           = (λy. y) x
+  contractum      = x
+  reduct  C[…]    = λx. x z
+  rules used      : ξ ∘ app-L ∘ β</span></code></pre>
+  <div class="diagram">
+    <svg viewBox="0 0 640 230" width="640" role="img" aria-label="Derivation of a step under a lambda">
+      <g font-family="JetBrains Mono, monospace" font-size="15" text-anchor="middle">
+        <text x="320" y="40" fill="#d4a017">(λy. y) x  →  x</text>
+        <line x1="200" y1="52" x2="440" y2="52" stroke="#eeece6" stroke-width="1.5"/><text x="470" y="46" fill="#9a9992" font-size="12">β</text>
+        <text x="320" y="100" fill="#eeece6">(λy. y) x z  →  x z</text>
+        <line x1="180" y1="112" x2="460" y2="112" stroke="#eeece6" stroke-width="1.5"/><text x="500" y="106" fill="#9a9992" font-size="12">app-L</text>
+        <text x="320" y="160" fill="#eeece6">λx. (λy. y) x z  →  λx. x z</text>
+        <line x1="150" y1="172" x2="490" y2="172" stroke="#eeece6" stroke-width="1.5"/><text x="515" y="166" fill="#9a9992" font-size="12">ξ</text>
+        <text x="320" y="215" fill="#82aaff" font-size="13">context λx. □ z  =  ξ layer, then app-L layer, then the hole</text>
+      </g>
+    </svg>
+    <div class="caption">Read bottom-up: "to step under the λ (ξ), step in the function part (app-L), where β applies." Each context layer is one inference rule.</div>
+  </div>
+  <a class="lab-link" data-lab="08" data-term="λx. (λy. y) x z">Step it yourself in the Lab</a><span class="lab-note"></span>
+</section>
+
+<section id="s04">
+  <h2><span class="num">04</span>The Code, Explained</h2>
+  <h3>Contexts: one constructor per congruence rule</h3>
+  <p class="file-label">src/reduce.ts</p>
+<pre><code><span class="k">export type</span> Ctx =
+  | { kind: <span class="s">"hole"</span> }
+  | { kind: <span class="s">"appL"</span>; ctx: Ctx; arg: Term }     <span class="c">// C N     (the hole is in the function)</span>
+  | { kind: <span class="s">"appR"</span>; fn: Term; ctx: Ctx }      <span class="c">// M C     (the hole is in the argument)</span>
+  | { kind: <span class="s">"lam"</span>; param: string; ctx: Ctx }; <span class="c">// λx. C   (the hole is under a binder)</span>
+
+<span class="k">export function</span> plug(c: Ctx, t: Term): Term {
+  <span class="k">switch</span> (c.kind) {
+    <span class="k">case</span> <span class="s">"hole"</span>: <span class="k">return</span> t;
+    <span class="k">case</span> <span class="s">"appL"</span>: <span class="k">return</span> App(plug(c.ctx, t), c.arg);
+    <span class="k">case</span> <span class="s">"appR"</span>: <span class="k">return</span> App(c.fn, plug(c.ctx, t));
+    <span class="k">case</span> <span class="s">"lam"</span>: <span class="k">return</span> Lam(c.param, plug(c.ctx, t));
+  }
+}</code></pre>
+  <p>No renaming anywhere in <code>plug</code>. That's correct, and the test "plugging DOES capture" checks it: <code>λx. □</code> filled with <code>x</code> must be <code>λx. x</code>.</p>
+
+  <h3>The rule itself</h3>
+<pre><code><span class="k">export function</span> contract(r: Term, log?: SubstLog): Term {
+  <span class="k">if</span> (isBetaRedex(r) &amp;&amp; …) <span class="k">return</span> subst(r.fn.body, r.fn.param, r.arg, log);   <span class="c">// β</span>
+  <span class="k">if</span> (isEtaRedex(r) &amp;&amp; …) <span class="k">return</span> r.body.fn;                                  <span class="c">// η</span>
+  <span class="k">throw new</span> Error(`${print(r)} is not a redex`);
+}</code></pre>
+
+  <h3>One step = decompose, contract, plug</h3>
+<pre><code><span class="k">export function</span> stepAt(t: Term, path: Path, kind?: RedexKind): StepResult {
+  <span class="k">const</span> { ctx, focus } = decompose(t, path);
+  <span class="c">// … check focus really is a redex of that kind …</span>
+  <span class="k">const</span> contractum = contract(focus, log);
+  <span class="k">return</span> { path, kind: k, ctx, redex: focus, contractum, reduct: plug(ctx, contractum), renames: log.renames };
+}</code></pre>
+  <div class="bullets"><div class="label">BULLET POINTS</div><ul>
+    <li>A step is <code>C[redex] → C[contractum]</code>, and the result is the reduct.</li>
+    <li>Contexts have one constructor per congruence rule, so a context <em>is</em> the step's derivation.</li>
+    <li>Substitution avoids capture. Plugging deliberately doesn't.</li>
+    <li>The order you pick redexes in changes how many steps you take (Brain Exercise).</li>
+  </ul></div>
+</section>
+
+<section id="s05">
+  <h2><span class="num">05</span>Limits: What You Cannot Do Yet</h2>
+  <div class="compare">
+    <div class="cant"><h4>Can't do yet</h4><ul>
+      <li>Run to completion automatically. <em>You</em> choose every redex (Module 9 adds strategies).</li>
+      <li>Detect an infinite loop. Ω just keeps stepping (Module 9 adds fuel).</li>
+      <li>Say whether different choices end in the same place (Module 10).</li>
+    </ul></div>
+    <div class="can"><h4>Can do now</h4><ul>
+      <li>Take any single β- or η-step anywhere in a term.</li>
+      <li>Show its context, contractum, reduct and derivation rules.</li>
+      <li>List every one-step reduct of a term.</li>
+      <li>Trust the step: it's cross-checked against the de Bruijn implementation.</li>
+    </ul></div>
+  </div>
+</section>
+
+<section id="s06">
+  <h2><span class="num">06</span>Run It</h2>
+  <div class="run-box"><h4>Run the tests</h4>
+  <pre><code>cd alonzo/track1-engine/08_beta
+npm test</code></pre>
+  <div class="desc">10 new + 89 carried from Modules 1–7. Actual summary:</div>
+<pre><code><span class="o"># tests 99
+# pass 99
+# fail 0</span></code></pre>
+  <div class="desc">Then <code>npm run demo</code>. Actual output (excerpt):</div>
+<pre><code><span class="o">λz. [(λx. λz. x z) z]
+  context    C[□] = λz. □
+  redex           = (λx. λz. x z) z
+  contractum      = λz1. z z1   (renamed z→z1 to avoid capture)
+  reduct  C[…]    = λz. λz1. z z1
+  rules used      : ξ ∘ β
+
+(λf. f) [λx. g x]
+  context    C[□] = (λf. f) □
+  redex           = λx. g x
+  contractum      = g
+  reduct  C[…]    = (λf. f) g
+  rules used      : app-R ∘ η
+
+== The one-step relation: every reduct of one term ==
+  (λx. x x) ((λy. y) z)  →β  (λy. y) z ((λy. y) z)      (redex at ε)
+  (λx. x x) ((λy. y) z)  →β  (λx. x x) z      (redex at arg)
+
+== Cross-check against de Bruijn β ==
+named and nameless β-steps agree on 2306/2306 steps</span></code></pre></div>
+  <div class="callout red"><div class="label">Getting a blank or broken result?</div>
+  <ul>
+    <li><strong><code>no redex at ε</code></strong>: the path points at a node that isn't a redex. Take paths from <code>findRedexes</code>.</li>
+    <li><strong>"Why did a name change to <code>z1</code>?"</strong> The β-step needed capture avoidance (Module 5). The result is α-equivalent to what you'd get with any other fresh name.</li>
+    <li><strong>An η-step you expected isn't offered</strong>: η must be requested (<code>["beta","eta"]</code>), and <code>λx. M x</code> only counts if x isn't free in M.</li>
+  </ul></div>
+  <a class="lab-link" data-lab="08">Open Lab 08: Hand Stepper</a><span class="lab-note"></span>
+</section>
+
+<section id="s07">
+  <h2><span class="num">07</span>Brain Exercise</h2>
+  <div class="brain"><div class="label">Think before you reveal</div>
+  <p>Start from <code>(λx. x x) ((λy. y) z)</code>. It has two redexes: the outer one (ε) and the inner <code>(λy. y) z</code> (arg).</p>
+  <p><strong>How many steps does it take to reach normal form if you always pick the outer redex first? And the inner one first? Explain the difference in one word.</strong>
+  Then do both in the Lab, whose checker counts your steps.</p>
+  <a class="lab-link" data-lab="08">Race both orders in the Lab</a>
+  <details><summary>Reveal the answer</summary>
+  <p><strong>Outer first: 3 steps.</strong> <code>(λy. y) z ((λy. y) z)</code> → <code>z ((λy. y) z)</code> → <code>z z</code>. The outer step <em>copied</em> the unevaluated argument into both
+  places <code>x</code> occurs, so its work had to be done twice.</p>
+  <p><strong>Inner first: 2 steps.</strong> <code>(λx. x x) z</code> → <code>z z</code>. The argument was simplified once, <em>then</em> copied.</p>
+  <p>The word is <strong>duplication</strong>. It's the central tension of Module 9: evaluating arguments first avoids duplicated work, but evaluating an argument that's never used
+  can waste work, or even never finish. Module 22 (call-by-need) gets the best of both by sharing instead of copying.</p></details></div>
+</section>
+
+<section id="s08">
+  <h2><span class="num">08</span>There Are No Dumb Questions</h2>
+  <div class="qa">
+    <p class="q">Why build contexts at all, when a path already says where the redex is?</p>
+    <p class="a">Because the context is what the textbook rule actually talks about: <code>C[R] → C[R']</code>. As data, it prints (<code>λx. □ z</code>), it tells you the derivation (ξ ∘ app-L ∘ β), and later modules reuse it: evaluation contexts drive the CEK machine (Module 21).</p>
+    <p class="q">Isn't plugging just substitution for the hole?</p>
+    <p class="a">No. Substitution replaces <em>free variables</em> and must avoid capture. Plugging fills a <em>hole</em> and must allow it. Mixing them up either breaks steps under λ or reintroduces Module 5's bug. The vocabulary web has a card for exactly this.</p>
+    <p class="q">Does a step always make the term smaller?</p>
+    <p class="a">No. <code>(λx. x x x) (λx. x x x)</code> grows with every step, and Ω stays the same size forever. "Reduction" means applying the rule, not shrinking.</p>
+    <p class="q">Why cross-check against de Bruijn again?</p>
+    <p class="a">Because β is the one operation everything else trusts. Two implementations that share no substitution code agreeing on 2306 steps is much stronger evidence than either one's own tests.</p>
+  </div>
+</section>
+
+<section id="s09">
+  <h2><span class="num">09</span>What's Next</h2>
+  <p>You've been choosing redexes by hand, and the Brain Exercise showed that the choice changes the cost. <strong>Module 9</strong> turns the choice into a function, a
+  <strong>strategy</strong>, and runs terms to completion with a <strong>fuel</strong> limit. It races normal order, applicative order, call-by-name and call-by-value.
+  One of them finishes <code>(λx. y) Ω</code> in a single step, and another never finishes at all.</p>
+</section>
+
+<div class="module-nav">
+  <a href="../07_redexes/tutorial.html"><span class="dir">← Previous</span>Module 7: Redex Anatomy</a>
+  <a class="next" href="../09_strategies/tutorial.html"><span class="dir">Next →</span>Module 9: Reduction Strategies &amp; Traces</a>
+</div>
+</main>
+<footer>Alonzo · Track 1 · Module 8 · <a href="DECISIONS.md">DECISIONS.md</a> · <a href="concept_how_they_connect.html">Vocabulary web</a> · <a href="../../GLOSSARY.md">Glossary</a></footer>
+<script src="../../shared/course.js"></script>
+</body>
+</html>

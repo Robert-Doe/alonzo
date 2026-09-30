@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Concept: Weak Head Normal Form</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700;800&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../shared/course.css">
+</head>
+<body>
+<nav class="topbar"><a class="brand" href="../../index.html">λ <span>Alonzo</span></a><a href="concept_how_they_connect.html">Vocabulary hub</a><a href="tutorial.html">Module 11 tutorial</a><span class="spacer"></span><span class="muted">Vocabulary web · 4 of 5</span></nav>
+<header class="hero">
+  <div class="badge">CONCEPT</div>
+  <h1>Weak head normal form</h1>
+  <p class="tagline">A λ, or a variable applied to arguments. Where lazy evaluation stops.</p>
+</header>
+<main class="container">
+<section>
+  <h2>In one sentence</h2>
+  <p>A term is in <strong>weak head normal form (WHNF)</strong> when it is an abstraction <code>λx. M</code> (anything inside) or a neutral term <code>y M1 … Mk</code>.</p>
+  <div class="analogy"><div class="big">A wrapped present: you know it's a present, and you haven't opened it.</div><p>Lazy languages stop here until someone actually needs what's inside.</p></div>
+</section>
+<section>
+  <h2>See it</h2>
+  <pre><code><span class="o">to WHNF (call-by-name)             λy. (λz. (λw. w) z) y        1 step(s)
+to HNF (head reduction)            λy. y                        3 step(s)</span></code></pre><p class="muted">Real demo output: call-by-name stops as soon as the term is a λ.</p>
+</section>
+<section>
+  <h2>Common mix-up</h2>
+  <div class="callout red"><div class="label">Wrong</div><p>"A term in WHNF has finished computing."</p></div>
+  <div class="callout green"><div class="label">Right</div><p>WHNF only fixes the <em>outer shape</em>. <code>λx. Ω</code> is in WHNF, yet running its body never finishes. Haskell's <code>seq</code> evaluates to exactly this form.</p></div>
+</section>
+<section>
+  <div class="callout accent"><div class="label">How this connects to the other terms</div><p>The loosest form in the chain: <a href="concept_head_normal_form.html">HNF</a> ⊆ WHNF. Every <a href="concept_value.html">value</a> is in WHNF.</p></div>
+  <p>Siblings: <a href="concept_beta_eta_normal_form.html">βη-normal form</a> · <a href="concept_beta_normal_form.html">β-normal form</a> · <a href="concept_head_normal_form.html">Head normal form</a> · <a href="concept_value.html">Value</a></p>
+  <p><a href="concept_how_they_connect.html">→ See all 5 terms side by side</a></p>
+</section>
+</main>
+<footer>Alonzo · Module 11 vocabulary web</footer>
+</body>
+</html>

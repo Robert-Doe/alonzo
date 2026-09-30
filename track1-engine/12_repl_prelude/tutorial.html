@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Definitions, Prelude & REPL</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700;800&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../shared/course.css">
+</head>
+<body>
+<nav class="topbar"><a class="brand" href="../../index.html">λ <span>Alonzo</span></a><a href="../../prerequisites.html">Prerequisites</a><a href="../../GLOSSARY.md">Glossary</a><a href="DECISIONS.md">Decisions</a><span class="spacer"></span><span class="muted">Track 1 · Phase 3 · Module 12 of 34</span></nav>
+
+<header class="hero">
+  <div class="badge">MODULE 12</div>
+  <h1>Definitions, Prelude &amp; <span>REPL</span></h1>
+  <p class="tagline">Write <code>S = λx y z. x z (y z)</code> once and use <code>S</code> forever, in a terminal or a browser. Then prove that names add <em>nothing</em> to the calculus: they're macros, gone before the first step.</p>
+  <div class="hero-grid">
+    <div class="hero-stat"><div class="num">500/500</div><div class="label">programs: names = hand expansion</div></div>
+    <div class="hero-stat"><div class="num">11</div><div class="label">prelude definitions</div></div>
+    <div class="hero-stat"><div class="num">144/144</div><div class="label">tests passing</div></div>
+  </div>
+</header>
+
+<main class="container">
+
+<section id="s00">
+  <h2><span class="num">00</span>Prerequisites</h2>
+  <div class="prereq-bar">
+    <a class="tag" href="../../prerequisites/p1_functions_as_mappings.html#anonymous">P1.2 functions don't need names</a>
+    <a class="tag" href="../../prerequisites/p2_variables_binding_scope.html#lexical">P2.4 lexical scope</a>
+    <a class="tag" href="../../prerequisites/p4_grammars_and_bnf.html#tokens">P4.4 tokens</a>
+  </div>
+  <p>From the course: <a href="../05_substitution/tutorial.html">capture-avoiding substitution</a> (generalized here to many names at once), and <a href="../09_strategies/tutorial.html">strategies</a> and <a href="../11_eta_normal_forms/tutorial.html">normal forms</a>, which the REPL's commands expose.</p>
+</section>
+
+<section id="s01">
+  <h2><span class="num">01</span>The Big Analogy</h2>
+  <div class="analogy">
+    <div class="big">A definition is a text-expander shortcut, not a new word in the language.</div>
+    <p>Type <code>;addr</code> and your laptop replaces it with your full address before the email is sent. The recipient never sees <code>;addr</code>, and the mail system never needs
+    to know shortcuts exist. Delete every shortcut and you can still send the exact same email, just with more typing.</p>
+    <p>That's a λ-calculus definition. <code>S K K a</code> is expanded to <code>(λx y z. x z (y z)) (λx y. x) (λx y. x) a</code> <em>before</em> reduction starts, so the reducer never sees a name.
+    It also explains the one thing shortcuts can't do: a shortcut that expands to <em>itself</em> would never finish expanding. So <code>fact = … fact …</code> is refused. Recursion
+    has to come from inside the calculus (Module 15).</p>
+  </div>
+</section>
+
+<section id="s02">
+  <h2><span class="num">02</span>What Happens, Step by Step</h2>
+  <ol class="steps">
+    <li>The lexer now recognizes <code>=</code>. A line <code>name = term</code> is a definition, <code>:word …</code> is a command, and anything else is an expression.</li>
+    <li><code>define</code> refuses a body that mentions its own name, expands all earlier names inside the body, and stores both versions.</li>
+    <li>For an expression, <code>expand</code> replaces every defined name at once, with <code>substMany</code> (simultaneous, capture-avoiding).</li>
+    <li>The raw term is reduced with the session's strategy (normal order by default) and fuel.</li>
+    <li>The result is printed, plus <code>= NAME</code> if it matches some definition's normal form.</li>
+    <li><code>execLine</code> is pure, so the terminal CLI and the browser Lab are just loops around it.</li>
+  </ol>
+</section>
+
+<section id="s03">
+  <h2><span class="num">03</span>The Map: A REPL Session</h2>
+  <p>Real transcript of <code>npm run repl -- examples.lam</code>:</p>
+<pre><code><span class="o">λ&gt; S K K a
+a
+  (normal: 5 steps, β-normal form)
+λ&gt; S K K
+λz. z   = I
+  (normal: 4 steps, β-normal form)
+λ&gt; B f g x
+f (g x)
+  (normal: 3 steps, β-normal form)
+λ&gt; twice twice f x
+f (f (f (f x)))
+  (normal: 8 steps, β-normal form)
+λ&gt; :expand twice twice
+(λf. λx. f (f x)) λf. λx. f (f x)
+λ&gt; fact = λn. fact n
+error: 'fact' mentions itself. Definitions are macros, so this would expand forever. Use a fixed-point combinator for recursion (Module 15).</span></code></pre>
+  <div class="table-wrap"><table class="map-table">
+    <tr><th>Prelude name</th><th>Definition</th><th>What it does</th></tr>
+    <tr><td><code>I</code></td><td><code>λx. x</code></td><td>identity</td></tr>
+    <tr><td><code>K</code> / <code>KI</code></td><td><code>λx y. x</code> / <code>λx y. y</code></td><td>keep first / keep second</td></tr>
+    <tr><td><code>S</code></td><td><code>λx y z. x z (y z)</code></td><td>substitution (S K K = I)</td></tr>
+    <tr><td><code>B</code> / <code>C</code> / <code>W</code></td><td><code>λf g x. f (g x)</code> / <code>λf x y. f y x</code> / <code>λf x. f x x</code></td><td>compose / flip / duplicate</td></tr>
+    <tr><td><code>M</code>, <code>Omega</code></td><td><code>λx. x x</code>, <code>M M</code></td><td>self-application; the endless loop</td></tr>
+    <tr><td><code>twice</code>, <code>apply</code></td><td><code>λf x. f (f x)</code>, <code>λf x. f x</code></td><td>higher-order helpers</td></tr>
+  </table></div>
+  <a class="lab-link" data-lab="12" data-term="S K K a">Open the REPL in your browser</a><span class="lab-note"></span>
+</section>
+
+<section id="s04">
+  <h2><span class="num">04</span>The Code, Explained</h2>
+  <h3>A definition is expanded when it's made</h3>
+  <p class="file-label">src/defs.ts</p>
+<pre><code><span class="k">export function</span> define(defs: Defs, name: string, source: Term): DefineResult {
+  <span class="k">if</span> (freeVars(source).has(name))
+    <span class="k">return</span> { ok: <span class="k">false</span>, error: `'${name}' mentions itself. …` };
+  <span class="k">const</span> body = expand(source, defs);          <span class="c">// earlier names are baked in now</span>
+  <span class="c">// … store { name, source, body } …</span>
+}</code></pre>
+
+  <h3>Simultaneous substitution</h3>
+<pre><code><span class="k">export function</span> substMany(t: Term, map: ReadonlyMap&lt;string, Term&gt;): Term {
+  <span class="k">switch</span> (t.kind) {
+    <span class="k">case</span> <span class="s">"var"</span>: <span class="k">return</span> map.get(t.name) ?? t;             <span class="c">// replacements are NOT re-scanned</span>
+    <span class="k">case</span> <span class="s">"app"</span>: <span class="k">return</span> App(substMany(t.fn, map), substMany(t.arg, map));
+    <span class="k">case</span> <span class="s">"lam"</span>: <span class="c">/* drop the shadowed name; rename the binder if a replacement would be captured */</span>
+  }
+}</code></pre>
+  <p>Why not substitute names one at a time? Try swapping: <code>{x ↦ y, y ↦ x}</code> on <code>x y</code>. Sequentially you get <code>x x</code> or <code>y y</code>. Simultaneously you get <code>y x</code>, and the demo prints exactly that.</p>
+
+  <h3>A REPL with no I/O</h3>
+<pre><code><span class="k">export function</span> execLine(s: Session, line: string): { session: Session; output: string[] } { <span class="c">/* … */</span> }</code></pre>
+  <p>The terminal (<code>repl-cli.ts</code>) and the browser (Lab 12) both call this and print the lines it returns. Same code, same answers.</p>
+  <div class="bullets"><div class="label">BULLET POINTS</div><ul>
+    <li>Definitions are macros, expanded before reduction. They add no power (500/500 random programs agree).</li>
+    <li>A definition can't mention itself. Recursion needs a fixed-point combinator (Module 15).</li>
+    <li>Expansion substitutes all names at once, and still avoids capture.</li>
+    <li>The REPL is a pure function from (session, line) to (session, output).</li>
+  </ul></div>
+</section>
+
+<section id="s05">
+  <h2><span class="num">05</span>Limits: What You Cannot Do Yet</h2>
+  <div class="compare">
+    <div class="cant"><h4>Can't do yet</h4><ul>
+      <li>Define recursive functions by name (Module 15).</li>
+      <li>Write numbers or booleans. Those are the next two modules, built from λ.</li>
+      <li>Give definitions types (Module 24 onward).</li>
+      <li>Use Unicode names like <code>Ω</code>. Identifiers are ASCII (Module 2), hence <code>Omega</code>.</li>
+    </ul></div>
+    <div class="can"><h4>Can do now</h4><ul>
+      <li>Name terms and reuse them, from a prelude file or interactively.</li>
+      <li>Evaluate with any strategy, fuel, and optional traces.</li>
+      <li>Inspect expansions, de Bruijn forms and normal-form classes from the prompt.</li>
+      <li>Run scripts: <code>npm run repl -- file.lam</code>.</li>
+    </ul></div>
+  </div>
+</section>
+
+<section id="s06">
+  <h2><span class="num">06</span>Run It</h2>
+  <div class="run-box"><h4>Run the tests</h4>
+  <pre><code>cd alonzo/track1-engine/12_repl_prelude
+npm test</code></pre>
+  <div class="desc">14 new + 130 carried from Modules 1–11. Actual summary:</div>
+<pre><code><span class="o"># tests 144
+# pass 144
+# fail 0</span></code></pre>
+  <div class="desc">Start the REPL (interactive), run a script, or pipe lines in:</div>
+<pre><code>npm run repl
+npm run repl -- examples.lam
+npm run demo</code></pre>
+  <div class="desc">Actual piped session (<code>printf 'S K K a\nK I\n:strategy applicative\nK a Omega\n:fuel 50\nK a Omega\n' | npm run repl</code>):</div>
+<pre><code><span class="o">λ&gt; S K K a
+a
+  (normal: 5 steps, β-normal form)
+λ&gt; K I
+λy. λx. x   = KI
+  (normal: 1 step, β-normal form)
+λ&gt; :strategy applicative
+strategy: applicative order
+λ&gt; K a Omega
+(λy. a) ((λx. x x) λx. x x)
+  (applicative: OUT OF FUEL after 10000 steps)
+λ&gt; :fuel 50
+fuel: 50
+λ&gt; K a Omega
+(λy. a) ((λx. x x) λx. x x)
+  (applicative: OUT OF FUEL after 50 steps)</span></code></pre></div>
+  <div class="callout red"><div class="label">Getting a blank or broken result?</div>
+  <ul>
+    <li><strong>A name isn't expanded:</strong> names are case-sensitive, and the definition must come <em>before</em> its use. <code>:defs</code> lists what's in scope.</li>
+    <li><strong>"mentions itself":</strong> that's a recursive definition, which macros can't express. Wait for Module 15.</li>
+    <li><strong>You redefined <code>K</code> and <code>S</code> still behaves the old way:</strong> expansion is static. <code>S</code> was expanded when it was defined. The REPL warns you.</li>
+  </ul></div>
+  <a class="lab-link" data-lab="12">Open Lab 12: λ-REPL</a><span class="lab-note"></span>
+</section>
+
+<section id="s07">
+  <h2><span class="num">07</span>Brain Exercise</h2>
+  <div class="brain"><div class="label">Think before you reveal</div>
+  <p><code>twice twice f x</code> gives <code>f (f (f (f x)))</code>: four applications. Now define <code>thrice = λf x. f (f (f x))</code>.</p>
+  <p><strong>Before evaluating, predict how many times <code>f</code> is applied in (a) <code>thrice twice f x</code> and (b) <code>twice thrice f x</code>. Are they the same? What arithmetic operation is
+  "putting one of these in front of another"?</strong> The Lab's checker takes your two numbers.</p>
+  <a class="lab-link" data-lab="12">Check your predictions in the Lab</a>
+  <details><summary>Reveal the answer</summary>
+  <p>(a) <strong>8</strong>, and (b) <strong>9</strong>. Not the same! (Verified: the REPL prints eight and nine <code>f</code>s.)</p>
+  <p><code>thrice twice</code> means "apply <em>twice</em>, three times": doubling three times gives 2 × 2 × 2 = 2³ = 8. <code>twice thrice</code> means "apply <em>thrice</em>, twice": 3 × 3 = 3² = 9.
+  So putting <code>n</code> in front of <code>m</code> computes <strong>mⁿ</strong>, exponentiation by pure function application. (And <code>thrice thrice f x</code> gives 27 = 3³.)</p>
+  <p>That's no accident. <code>twice</code> and <code>thrice</code> <em>are</em> the numbers 2 and 3, written as "apply f this many times." They're called <strong>Church numerals</strong>, and Module 14 builds
+  all of arithmetic on them. Exponentiation turns out to be the <em>easiest</em> operation.</p></details></div>
+</section>
+
+<section id="s08">
+  <h2><span class="num">08</span>There Are No Dumb Questions</h2>
+  <div class="qa">
+    <p class="q">If definitions add no power, why bother?</p>
+    <p class="a">For humans. <code>S K K</code> is readable, and its expansion is not. The theorem "no power added" is what lets us <em>use</em> them without worrying: anything proved about raw terms still holds.</p>
+    <p class="q">How do real languages allow recursive definitions then?</p>
+    <p class="a">They add something the pure calculus doesn't have: a <code>let rec</code> construct, or a built-in fixed-point operator. Under the hood, <code>let rec f = … f …</code> becomes <code>Y (λf. …)</code> (Module 15) or a special runtime mechanism (Track 2).</p>
+    <p class="q">Why static expansion instead of looking names up at evaluation time?</p>
+    <p class="a">Because looking names up late is <em>dynamic scope</em>: redefining a helper would silently change every function that used it. Early LISP worked that way and it caused bugs (Track H5).</p>
+    <p class="q">Why ASCII names only?</p>
+    <p class="a">The lexer's identifier rule (Module 2) is ASCII letters, digits, <code>_</code> and <code>'</code>, the same rule the printer relies on. Allowing <code>Ω</code> would mean widening both, and <code>λ</code> itself would have to stay reserved.</p>
+  </div>
+</section>
+
+<section id="s09">
+  <h2><span class="num">09</span>What's Next</h2>
+  <p>The REPL can name things, but it still has nothing to compute <em>with</em>: no true/false, no numbers, no pairs. <strong>Module 13</strong> builds the first data out of pure functions:
+  <strong>Church booleans</strong> (a boolean is a choice between two things) and <strong>pairs</strong> (a pair is a function waiting for a selector). It adds them to the prelude,
+  verifies every truth table by reduction, and shows why <code>if</code> must be lazy, reusing Module 9's strategies.</p>
+</section>
+
+<div class="module-nav">
+  <a href="../11_eta_normal_forms/tutorial.html"><span class="dir">← Previous</span>Module 11: η-Conversion &amp; Normal-Form Zoo</a>
+  <a class="next" href="../13_booleans_pairs/tutorial.html"><span class="dir">Next →</span>Module 13: Church Booleans &amp; Pairs</a>
+</div>
+</main>
+<footer>Alonzo · Track 1 · Module 12 · <a href="DECISIONS.md">DECISIONS.md</a> · <a href="../../GLOSSARY.md">Glossary</a></footer>
+<script src="../../shared/course.js"></script>
+</body>
+</html>

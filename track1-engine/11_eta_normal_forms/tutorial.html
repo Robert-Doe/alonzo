@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>η-Conversion & Normal Forms</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700;800&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../shared/course.css">
+</head>
+<body>
+<nav class="topbar"><a class="brand" href="../../index.html">λ <span>Alonzo</span></a><a href="../../prerequisites.html">Prerequisites</a><a href="../../GLOSSARY.md">Glossary</a><a href="DECISIONS.md">Decisions</a><a href="concept_how_they_connect.html">Vocabulary web</a><span class="spacer"></span><span class="muted">Track 1 · Phase 2 · Module 11 of 34</span></nav>
+
+<header class="hero">
+  <div class="badge">MODULE 11</div>
+  <h1>η-Conversion &amp; the <span>Normal-Form Zoo</span></h1>
+  <p class="tagline">"Finished" means five different things depending on who's asking. Here they are, nested inside each other, each with a real term that sits in one but not the next.</p>
+  <div class="hero-grid">
+    <div class="hero-stat"><div class="num">5</div><div class="label">kinds of finished</div></div>
+    <div class="hero-stat"><div class="num">λx. Ω</div><div class="label">a value with no head normal form</div></div>
+    <div class="hero-stat"><div class="num">130/130</div><div class="label">tests passing</div></div>
+  </div>
+</header>
+
+<main class="container">
+
+<section id="s00">
+  <h2><span class="num">00</span>Prerequisites</h2>
+  <div class="prereq-bar">
+    <a class="tag" href="../../prerequisites/p1_functions_as_mappings.html#mapping">P1.1 extensionality</a>
+    <a class="tag" href="../../prerequisites/p6_rewriting_systems.html#normal-form">P6.2 normal forms</a>
+  </div>
+  <p>From the course: head and weak-head redexes (<a href="../07_redexes/tutorial.html">Module 7</a>), the strategies that stop at each form (<a href="../09_strategies/tutorial.html">Module 9</a>), and uniqueness via Church–Rosser (<a href="../10_confluence/tutorial.html">Module 10</a>).
+  The five forms are easy to mix up, so there's a <a href="concept_how_they_connect.html"><strong>vocabulary web</strong></a> for them.</p>
+</section>
+
+<section id="s01">
+  <h2><span class="num">01</span>The Big Analogy</h2>
+  <div class="analogy">
+    <div class="big">Five levels of "done" for a parcel.</div>
+    <ul>
+      <li><strong>Value / weak head normal form:</strong> it's a <em>sealed box</em>, and you can see that it's a box. You haven't opened it. It might even be full of an endless supply of packing peanuts (<code>λx. Ω</code>).</li>
+      <li><strong>Head normal form:</strong> you've opened the box far enough to read the <em>name on the top item</em>, a variable. Whatever else is inside, that label can't change.</li>
+      <li><strong>β-normal form:</strong> everything is unpacked, down to the last sub-package. No envelope anywhere is left unopened.</li>
+      <li><strong>βη-normal form:</strong> unpacked <em>and</em> every pointless re-wrapping removed. A box whose only content is "forward this to f" is replaced by f itself.</li>
+    </ul>
+    <p>A lazy language hands over the sealed box (WHNF). A theorem about "meaningful" terms needs the label (HNF). Comparing two programs for equality wants everything unpacked (β-NF or βη-NF).</p>
+  </div>
+</section>
+
+<section id="s02">
+  <h2><span class="num">02</span>What Happens, Step by Step</h2>
+  <ol class="steps">
+    <li><code>classifyForms(t)</code> asks five questions, each answered by an earlier module: any β-redex? any η-redex? a head redex? a weak-head redex? is it a λ or a variable?</li>
+    <li>η-reduction <code>λx. M x → M</code> (x ∉ FV(M)) was already a legal step. Now a strategy can <em>choose</em> it: <code>normalOrderBetaEta</code>.</li>
+    <li>Module 9's <code>run</code> now honours the redex kind a strategy returns, a one-line change.</li>
+    <li>Four normalizers each run the strategy that stops exactly at their form: call-by-name → WHNF, head reduction → HNF, normal order → β-NF, βη normal order → βη-NF.</li>
+    <li><code>etaExpand(M)</code> goes the other way, <code>M ↦ λx. M x</code>, with x fresh.</li>
+  </ol>
+</section>
+
+<section id="s03">
+  <h2><span class="num">03</span>The Map: The Zoo</h2>
+  <p>Real <code>npm run demo</code> output. Each row is in its column's form but not the one to its left:</p>
+<pre><code><span class="o">term                          βη-NF  β-NF   HNF   WHNF  value
+f                               ✓     ✓    ✓     ✓    ✓
+λx. f x                         ·     ✓    ✓     ✓    ✓
+x ((λa. a) b)                   ·     ·    ✓     ✓    ·
+λx. (λy. y) x                   ·     ·    ·     ✓    ✓
+λx. (λy. y y) (λy. y y)         ·     ·    ·     ✓    ✓
+(λx. x) y                       ·     ·    ·     ·    ·</span></code></pre>
+  <div class="diagram">
+    <svg viewBox="0 0 660 280" width="660" role="img" aria-label="Nested normal forms"><g fill="none" stroke-width="2"><rect x="10" y="10" width="640" height="260" rx="16" stroke="#9a9992"/><rect x="40" y="50" width="600" height="205" rx="14" stroke="#82aaff"/><rect x="70" y="90" width="300" height="150" rx="12" stroke="#c792ea"/><rect x="100" y="130" width="180" height="95" rx="10" stroke="#d4a017"/><rect x="330" y="62" width="295" height="178" rx="12" stroke="#4ade80" stroke-dasharray="6 4"/></g><g font-family="Inter, sans-serif" font-size="13"><text x="22" y="32" fill="#9a9992">all terms · e.g. (λx. x) y</text><text x="52" y="72" fill="#82aaff">WHNF · λx. (λy. y) x</text><text x="82" y="112" fill="#c792ea">HNF · x ((λa. a) b)</text><text x="112" y="152" fill="#d4a017">β-NF · λx. f x</text><text x="112" y="200" fill="#eeece6">βη-NF · f</text><text x="432" y="82" fill="#4ade80">values (CBV)</text><text x="432" y="102" fill="#9a9992">λ-abstractions, variables</text><text x="432" y="190" fill="#9a9992">inside WHNF, but cuts</text><text x="432" y="206" fill="#9a9992">across HNF and β-NF</text></g><rect x="108" y="180" width="120" height="32" rx="8" fill="none" stroke="#eeece6" stroke-width="1.5"/></svg>
+    <div class="caption">βη-NF ⊆ β-NF ⊆ HNF ⊆ WHNF. Values (dashed) are inside WHNF and cut across the inner boxes.</div>
+  </div>
+  <a class="lab-link" data-lab="11" data-term="x ((λa. a) b)">Classify your own terms in the Lab</a><span class="lab-note"></span>
+</section>
+
+<section id="s04">
+  <h2><span class="num">04</span>The Code, Explained</h2>
+  <h3>Four predicates, all borrowed</h3>
+  <p class="file-label">src/normal.ts</p>
+<pre><code><span class="k">export const</span> isBetaEtaNormal = (t: Term) =&gt; findRedexes(t, [<span class="s">"beta"</span>, <span class="s">"eta"</span>]).length === 0;
+<span class="k">export const</span> isHNF  = (t: Term) =&gt; headRedex(t) === <span class="k">null</span>;
+<span class="k">export const</span> isWHNF = (t: Term) =&gt; weakHeadRedex(t) === <span class="k">null</span>;
+<span class="c">// isBetaNormal: Module 7.  isValue: Module 9.</span></code></pre>
+  <p>Module 7 defined <em>where</em> the head redex is. "No head redex" <em>is</em> head normal form. Reusing the definitions means the two can never drift apart.</p>
+
+  <h3>Normalizers are just strategies with a destination</h3>
+<pre><code><span class="k">export const</span> normalOrderBetaEta: Strategy = { name: <span class="s">"normal order (βη)"</span>, pick: t =&gt; leftmostOutermost(t, [<span class="s">"beta"</span>, <span class="s">"eta"</span>]) };
+
+<span class="k">export const</span> toWHNF     = (t, o?) =&gt; run(t, callByName, o);
+<span class="k">export const</span> toHNF      = (t, o?) =&gt; run(t, headReduction, o);
+<span class="k">export const</span> toBetaNF   = (t, o?) =&gt; run(t, normalOrder, o);
+<span class="k">export const</span> toBetaEtaNF = (t, o?) =&gt; run(t, normalOrderBetaEta, o);</code></pre>
+
+  <h3>The one-line change to Module 9</h3>
+<pre><code><span class="k">const</span> next = stepAt(cur, r.path, r.kind).reduct;   <span class="c">// was: stepAt(cur, r.path, "beta")</span></code></pre>
+  <div class="bullets"><div class="label">BULLET POINTS</div><ul>
+    <li>βη-NF ⊆ β-NF ⊆ HNF ⊆ WHNF. Values are inside WHNF.</li>
+    <li>η is extensionality: a function that just forwards its argument to M <em>is</em> M.</li>
+    <li>WHNF fixes only the outer shape. <code>λx. Ω</code> is WHNF and still has no HNF.</li>
+    <li>Each normalizer is the strategy that stops exactly at its form.</li>
+  </ul></div>
+</section>
+
+<section id="s05">
+  <h2><span class="num">05</span>Limits: What You Cannot Do Yet</h2>
+  <div class="compare">
+    <div class="cant"><h4>Can't do yet</h4><ul>
+      <li>Give a "meaning" to terms with no normal form at all. That's Böhm trees (Module 34).</li>
+      <li>Normalize fast: every normalizer re-searches the term each step (normalization by evaluation, Module 23).</li>
+      <li>Name terms and reuse them. Every example is still typed out in full (Module 12).</li>
+    </ul></div>
+    <div class="can"><h4>Can do now</h4><ul>
+      <li>Classify any term into five normal-form notions.</li>
+      <li>Normalize to any of them, with fuel.</li>
+      <li>Reduce and expand η, and see extensional equalities that β misses.</li>
+      <li>Explain why <code>seq</code> in Haskell stops at WHNF.</li>
+    </ul></div>
+  </div>
+</section>
+
+<section id="s06">
+  <h2><span class="num">06</span>Run It</h2>
+  <div class="run-box"><h4>Run the tests</h4>
+  <pre><code>cd alonzo/track1-engine/11_eta_normal_forms
+npm test</code></pre>
+  <div class="desc">9 new + 121 carried from Modules 1–10. Actual summary:</div>
+<pre><code><span class="o"># tests 130
+# pass 130
+# fail 0</span></code></pre>
+  <div class="desc">Then <code>npm run demo</code>. Actual output (the zoo table is in 03):</div>
+<pre><code><span class="o">== One term, four normalizers: (λx. λy. x y) (λz. (λw. w) z) ==
+  to WHNF (call-by-name)             λy. (λz. (λw. w) z) y        1 step(s)
+  to HNF (head reduction)            λy. y                        3 step(s)
+  to β-NF (normal order)             λy. y                        3 step(s)
+  to βη-NF (normal order, β and η)   λw. w                        3 step(s)
+
+== η both ways ==
+  λx. f x  →η  f
+  expand f:      λx. f x
+  expand f x:    λx1. f x x1   (fresh name: x is taken)
+
+== λx. Ω: a value with no head normal form ==
+  to WHNF: 0 steps, stopped (not β-normal: this strategy doesn't reduce there)
+  to HNF:  OUT OF FUEL after 100 steps
+
+== How random terms spread over the zoo (3000 terms) ==
+  βη-NF 1769 ⊆ β-NF 1796 ⊆ HNF 2164 ⊆ WHNF 2401;  values 1818;  not even WHNF 599</span></code></pre></div>
+  <div class="callout red"><div class="label">Getting a blank or broken result?</div>
+  <ul>
+    <li><strong>"βη gave <code>λw. w</code> but β gave <code>λy. y</code>":</strong> they're the same term up to α. The βη run took an η-step first, which kept a different binder name.</li>
+    <li><strong><code>λx. x x</code> isn't η-reduced:</strong> correct. x occurs free in the function part, so it's not an η-redex.</li>
+    <li><strong>"to WHNF ... stopped (not β-normal)":</strong> that's the point of WHNF. The status just tells you redexes remain inside.</li>
+  </ul></div>
+  <a class="lab-link" data-lab="11">Open Lab 11: Normal-Form Zoo</a><span class="lab-note"></span>
+</section>
+
+<section id="s07">
+  <h2><span class="num">07</span>Brain Exercise</h2>
+  <div class="brain"><div class="label">Think before you reveal</div>
+  <p>Fill the zoo yourself: find a term that is (1) β-normal but not βη-normal, (2) head normal but not β-normal, (3) weak head normal but not head normal.</p>
+  <p><strong>(4), the real puzzle: find a term already in WHNF, so a lazy evaluator says "done" immediately, from which <em>no amount</em> of head reduction reaches head normal form.
+  What does that say about using WHNF as "the answer"?</strong> The Lab checks all four slots.</p>
+  <a class="lab-link" data-lab="11">Fill the zoo in the Lab</a>
+  <details><summary>Reveal the answer</summary>
+  <p>(1) <code>λx. f x</code>. (2) <code>x ((λa. a) b)</code>. (3) <code>λx. (λy. y) x</code>. These are the zoo rows.</p>
+  <p>(4) <code>λx. Ω</code>, i.e. <code>λx. (λy. y y) (λy. y y)</code>. It's a λ, so it's WHNF (and a CBV value) in zero steps. But under the λ sits Ω, and head reduction loops forever. It's
+  <em>unsolvable</em>: no arguments you apply it to will ever make it produce a head variable.</p>
+  <p>So WHNF is a good <em>stopping point for an evaluator</em> (you know you have a function), and a poor <em>definition of meaning</em>. That's why theory prefers HNF: the unsolvable terms
+  are exactly the ones with no HNF, and they can all be identified with each other consistently (Barendregt). Böhm trees (Module 34) build on that idea.</p></details></div>
+</section>
+
+<section id="s08">
+  <h2><span class="num">08</span>There Are No Dumb Questions</h2>
+  <div class="qa">
+    <p class="q">Why would anyone <em>want</em> η?</p>
+    <p class="a">Because <code>λx. f x</code> and <code>f</code> behave identically on every argument (<a href="../../prerequisites/p1_functions_as_mappings.html#mapping">P1.1</a>). Without η, the calculus can't prove them equal. Compilers use η-reduction to remove wrapper functions, and η-expansion to make arities explicit.</p>
+    <p class="q">Is η always safe in real languages?</p>
+    <p class="a">Not quite. In a language with side effects or strictness, <code>λx. f x</code> delays evaluating <code>f</code>, but plain <code>f</code> doesn't. If computing <code>f</code> loops or prints, they differ. In the pure λ-calculus they never do.</p>
+    <p class="q">Why do lazy languages stop at WHNF instead of going all the way?</p>
+    <p class="a">Because often only the outer shape is needed ("is it a cons cell?"), and computing the rest might be expensive or infinite. Laziness means computing just enough.</p>
+    <p class="q">Which form does <code>print</code> in a REPL use?</p>
+    <p class="a">Usually full normal form, because you want to <em>see</em> everything. Module 12's REPL uses normal order to β-NF by default, with a command to switch strategies.</p>
+  </div>
+</section>
+
+<section id="s09">
+  <h2><span class="num">09</span>What's Next</h2>
+  <p>Phase 2 is complete: the engine finds redexes, contracts them, runs strategies, draws every path, and knows what "done" means. But typing
+  <code>(λx y z. x z (y z))</code> every time is exhausting. <strong>Module 12</strong> opens Phase 3 with <strong>definitions, a prelude file and a REPL</strong>: write <code>S = λx y z. x z (y z)</code>
+  once, then evaluate <code>S K K a</code>. And it proves that definitions add no power at all: they're macros that expand to raw terms before a single step is taken.</p>
+</section>
+
+<div class="module-nav">
+  <a href="../10_confluence/tutorial.html"><span class="dir">← Previous</span>Module 10: Reduction Graphs &amp; Church–Rosser</a>
+  <a class="next" href="../12_repl_prelude/tutorial.html"><span class="dir">Next →</span>Module 12: Definitions, Prelude &amp; REPL</a>
+</div>
+</main>
+<footer>Alonzo · Track 1 · Module 11 · <a href="DECISIONS.md">DECISIONS.md</a> · <a href="concept_how_they_connect.html">Vocabulary web</a> · <a href="../../GLOSSARY.md">Glossary</a></footer>
+<script src="../../shared/course.js"></script>
+</body>
+</html>

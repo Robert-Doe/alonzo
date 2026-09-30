@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Concept: Bound Variable</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700;800&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../shared/course.css">
+</head>
+<body style="--accent:#f472b6;--accent-rgb:244,114,182">
+<nav class="topbar"><a class="brand" href="../../index.html">λ <span>Alonzo</span></a><a href="concept_how_they_connect.html">Vocabulary hub</a><a href="tutorial.html">Module 5 tutorial</a><span class="spacer"></span><span class="muted">Vocabulary web · 4 of 5</span></nav>
+<header class="hero">
+  <div class="badge">CONCEPT</div>
+  <h1>Bound Variable</h1>
+  <p class="tagline">A use of a name that refers back to an enclosing binder, and specifically to the <em>nearest</em> one.</p>
+</header>
+<main class="container">
+<section>
+  <h2>In one sentence</h2>
+  <p>An occurrence of <code>x</code> is <strong>bound</strong> when it lies in the scope of some <code>λx.</code>. It is bound <em>by</em> the innermost such binder.</p>
+  <div class="analogy"><div class="big">A bound variable is someone in the room saying the room's nickname.</div>
+  <p>They mean the guest that <em>this</em> room's door tag named, and nobody else. Rename the tag and all the matching mentions consistently, and nothing about who is meant changes (α-conversion).</p></div>
+</section>
+<section>
+  <h2>See it</h2>
+<pre><code>(λx. λx. x y) x
+          <span class="o">^</span>       bound by the INNER λx (the one at path fn.body)</code></pre>
+  <p>Real <code>occurrences()</code> output from <a href="../04_alpha/tutorial.html#s03">Module 4</a>: <code>x at fn.body.body.fn  bound by the λ at fn.body</code>.
+  Because bound names only express "which binder," they can be replaced by <em>numbers</em>: "the binder 0 levels out." That's Module 6's de Bruijn indices.</p>
+</section>
+<section>
+  <h2>Common mix-up</h2>
+  <div class="callout red"><div class="label">Wrong</div><p>"<code>λx. x y</code> has only bound variables, so it's a closed term."</p></div>
+  <div class="callout green"><div class="label">Right</div><p>Bound is a property of each <em>occurrence</em>, and closed is a property of a whole <em>term</em>. <code>y</code> is free here, so the term is open. It's closed only if <em>every</em> occurrence is bound.</p></div>
+</section>
+<section>
+  <div class="callout accent"><div class="label">How this connects to the other terms</div>
+  <p>A bound variable sits inside the <a href="concept_scope.html">scope</a> of its <a href="concept_binder.html">binder</a>. Every occurrence is either bound or
+  <a href="concept_free_variable.html">free</a>, never both. <a href="concept_variable_capture.html">Capture</a> is the bug where a <em>free</em> occurrence silently becomes <em>bound</em>.</p></div>
+  <p><a href="concept_how_they_connect.html">→ See all five terms side by side</a></p>
+</section>
+</main>
+<footer>Alonzo · Module 5 vocabulary web</footer>
+</body>
+</html>

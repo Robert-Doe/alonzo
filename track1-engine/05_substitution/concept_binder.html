@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Concept: Binder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700;800&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../shared/course.css">
+</head>
+<body style="--accent:#f472b6;--accent-rgb:244,114,182">
+<nav class="topbar"><a class="brand" href="../../index.html">λ <span>Alonzo</span></a><a href="concept_how_they_connect.html">Vocabulary hub</a><a href="tutorial.html">Module 5 tutorial</a><span class="spacer"></span><span class="muted">Vocabulary web · 1 of 5</span></nav>
+<header class="hero">
+  <div class="badge">CONCEPT</div>
+  <h1>Binder</h1>
+  <p class="tagline">The <code>λx.</code> part of an abstraction: the place where a name is <em>introduced</em>.</p>
+</header>
+<main class="container">
+<section>
+  <h2>In one sentence</h2>
+  <p>A <strong>binder</strong> is the declaration <code>λx.</code> that creates the name <code>x</code> for its body. It's where a variable is <em>born</em>, not where it's <em>used</em>.</p>
+  <div class="analogy"><div class="big">A binder is the name tag printed at the door of a room.</div>
+  <p>The tag says "inside, we'll call the guest <em>x</em>." The tag itself isn't a person talking about x. It's the announcement that makes talking about x possible.</p></div>
+</section>
+<section>
+  <h2>See it</h2>
+<pre><code>λx. x y
+<span class="o">^^</span>
+binder: introduces x</code></pre>
+  <p>In the engine, a binder is the <code>param</code> field of a <code>{ kind: "lam" }</code> node. It is <strong>not</strong> a <code>{ kind: "var" }</code> node. That's why
+  <code>counts(λx. x)</code> reports <code>vars: 1</code>: only the body's <code>x</code> is a variable occurrence (<a href="../01_term_ast/tutorial.html">Module 1</a>).</p>
+  <p>Shorthand <code>λx y. M</code> contains <strong>two</strong> binders: it's <code>λx. λy. M</code>.</p>
+</section>
+<section>
+  <h2>Common mix-up</h2>
+  <div class="callout red"><div class="label">Wrong</div><p>"In <code>λx. x</code>, both x's are bound variables."</p></div>
+  <div class="callout green"><div class="label">Right</div><p>The first <code>x</code> is the <em>binder</em>. The second is a <em>bound occurrence</em>, a use that refers back to the binder.</p></div>
+</section>
+<section>
+  <div class="callout accent"><div class="label">How this connects to the other terms</div>
+  <p>A binder defines a <a href="concept_scope.html">scope</a>: its body. Every use of its name inside that scope is a
+  <a href="concept_bound_variable.html">bound variable</a>. Uses with no matching binder around them are
+  <a href="concept_free_variable.html">free variables</a>. When a careless rename or substitution puts a free name under a binder with the same name,
+  that binder grabs it: that's <a href="concept_variable_capture.html">capture</a>.</p></div>
+  <p><a href="concept_how_they_connect.html">→ See all five terms side by side</a></p>
+</section>
+</main>
+<footer>Alonzo · Module 5 vocabulary web</footer>
+</body>
+</html>

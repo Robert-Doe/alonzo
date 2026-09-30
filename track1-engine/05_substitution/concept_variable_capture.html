@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Concept: Variable Capture</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700;800&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../shared/course.css">
+</head>
+<body style="--accent:#f472b6;--accent-rgb:244,114,182">
+<nav class="topbar"><a class="brand" href="../../index.html">λ <span>Alonzo</span></a><a href="concept_how_they_connect.html">Vocabulary hub</a><a href="tutorial.html">Module 5 tutorial</a><span class="spacer"></span><span class="muted">Vocabulary web · 5 of 5</span></nav>
+<header class="hero">
+  <div class="badge">CONCEPT</div>
+  <h1>Variable Capture</h1>
+  <p class="tagline">The bug where a free name gets moved under a binder of the same name, and silently changes which variable it refers to.</p>
+</header>
+<main class="container">
+<section>
+  <h2>In one sentence</h2>
+  <p><strong>Capture</strong> happens when an operation (renaming, substitution) turns a <em>free</em> occurrence into a <em>bound</em> one, or re-binds an occurrence to a different λ. The text looks plausible, but the meaning has changed.</p>
+  <div class="analogy"><div class="big">Capture is a letter for the neighbor delivered into a house where a resident has the same nickname.</div>
+  <p>The envelope says "for y." Outside, y was the neighbor. But you carried it through a door whose tag says "here, y means our guest," and now the guest opens it.</p></div>
+</section>
+<section>
+  <h2>See it (real output of <code>npm run demo</code>)</h2>
+<pre><code><span class="o">(λy. x)[x := y]
+  naive   : λy. y                  FV = {}
+  correct : λy1. y                 FV = {y}   renamed y→y1
+  same meaning? false</span></code></pre>
+  <p><code>λy. x</code> is a constant function: it ignores its argument and returns whatever <code>x</code> is. Substituting the outside <code>y</code> for x should give
+  "ignore the argument, return the outside y." Naive substitution gives <code>λy. y</code>, the <em>identity</em>. The fix, from Curry: rename the binder to a fresh
+  name first (<code>y1</code>), then substitute.</p>
+</section>
+<section>
+  <h2>Common mix-up</h2>
+  <div class="callout red"><div class="label">Wrong</div><p>"<code>λx. λx. x</code> is an example of capture."</p></div>
+  <div class="callout green"><div class="label">Right</div><p>That's <strong>shadowing</strong>, a legal and intended nesting that you wrote on purpose. Capture is a <em>change</em> in binding caused by an operation on the term. Shadowing is a fact about the source. Capture is a bug in a transformation.</p></div>
+  <div class="callout gold"><div class="label">Subtle</div><p>Checking free variables before and after does <em>not</em> catch every capture. If a captured name also appears free elsewhere, FV is unchanged. Module 5's demo found 414 captures in 3000 random substitutions, and only 192 of them changed FV. See the tutorial's Brain Exercise.</p></div>
+</section>
+<section>
+  <div class="callout accent"><div class="label">How this connects to the other terms</div>
+  <p>Capture needs all four other ideas at once: a <a href="concept_free_variable.html">free variable</a> in the incoming term, moved into the
+  <a href="concept_scope.html">scope</a> of a <a href="concept_binder.html">binder</a> with the same name, where it wrongly becomes a
+  <a href="concept_bound_variable.html">bound variable</a>. Avoiding it (fresh renaming) is what makes substitution, and therefore β-reduction, correct.</p></div>
+  <p><a href="concept_how_they_connect.html">→ See all five terms side by side</a></p>
+</section>
+</main>
+<footer>Alonzo · Module 5 vocabulary web</footer>
+</body>
+</html>
